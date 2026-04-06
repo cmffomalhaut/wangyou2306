@@ -1,0 +1,352 @@
+# yaml-language-server: $schema=../../schema.json
+世界:
+  时间: 白银纪元-0001/01/01-08:00
+  地点: 边境训练场
+  剧情上下文: 主角正在训练场进行一场教学战斗。
+规则配置:
+  版本: dnd-lite-v1
+  检定模式: dnd
+  骰子:
+    攻击骰: 1d20
+    暴击阈值: 20
+    失误阈值: 1
+  数值规则:
+    等级上限: 20
+    属性下限: 1
+    属性上限: 30
+    技能栏上限: 6
+    状态上限: 8
+  资源规则:
+    默认行动点: 1
+    回合MP恢复: 2
+    防御行动减伤: 0.4
+    逃跑基础DC: 13
+    战斗金币基础值: 12
+    战斗金币等级系数: 4
+    战斗掉落基础概率: 0.35
+  敌方掉落表:
+    goblin_scout:
+      - itemId: potion_small
+        chance: 0.55
+        minCount: 1
+        maxCount: 1
+      - itemId: ether_small
+        chance: 0.25
+        minCount: 1
+        maxCount: 2
+技能定义表:
+  basic_attack:
+    id: basic_attack
+    名称: 普通攻击
+    类型: 主动
+    标签: [physical]
+    描述: 使用武器或拳脚造成一次基础攻击。
+    目标类型: single_enemy
+    射程: melee
+    消耗:
+      MP: 0
+      HP: 0
+      冷却回合: 0
+      行动点: 1
+    检定:
+      类型: attack_roll
+      攻击属性: 力量
+      对抗防御: 护甲等级
+      命中加值: 0
+    效果列表:
+      - kind: damage
+        scale: 力量
+        ratio: 1.1
+        flat: 4
+        damageType: slash
+    AI约束:
+      使用倾向: attack
+      推荐时机: 默认出手技能
+  fire_bolt:
+    id: fire_bolt
+    名称: 火焰箭
+    类型: 主动
+    标签: [magic, debuff]
+    描述: 发射一枚火焰箭，对敌人造成法术伤害并有概率附加灼烧。
+    目标类型: single_enemy
+    射程: ranged
+    消耗:
+      MP: 6
+      HP: 0
+      冷却回合: 1
+      行动点: 1
+    检定:
+      类型: attack_roll
+      攻击属性: 智力
+      对抗防御: 精神防御
+      命中加值: 2
+    效果列表:
+      - kind: damage
+        scale: 智力
+        ratio: 1.4
+        flat: 8
+        damageType: fire
+      - kind: apply_status
+        statusId: burn
+        chance: 0.45
+        duration: 2
+        power: 5
+    AI约束:
+      使用倾向: burst
+      推荐时机: 需要压低敌方血量时
+  guard_stance:
+    id: guard_stance
+    名称: 守势
+    类型: 主动
+    标签: [buff]
+    描述: 架起防守姿态，获得短暂护盾。
+    目标类型: self
+    射程: melee
+    消耗:
+      MP: 3
+      HP: 0
+      冷却回合: 2
+      行动点: 1
+    检定:
+      类型: auto_hit
+    效果列表:
+      - kind: shield
+        scale: 体质
+        ratio: 1.2
+        flat: 8
+        duration: 2
+    AI约束:
+      使用倾向: survive
+      推荐时机: 自身生命偏低时
+  holy_light:
+    id: holy_light
+    名称: 圣光疗愈
+    类型: 主动
+    标签: [heal, support]
+    描述: 回复己方生命值。
+    目标类型: single_ally
+    射程: ranged
+    消耗:
+      MP: 8
+      HP: 0
+      冷却回合: 1
+      行动点: 1
+    检定:
+      类型: auto_hit
+    效果列表:
+      - kind: heal
+        scale: 精神
+        ratio: 1.8
+        flat: 12
+    AI约束:
+      使用倾向: support
+      推荐时机: 己方生命低于一半时
+  goblin_stab:
+    id: goblin_stab
+    名称: 肮脏刺击
+    类型: 主动
+    标签: [physical, debuff]
+    描述: 肮脏的小刀攻击，有机会附加流血。
+    目标类型: single_enemy
+    射程: melee
+    消耗:
+      MP: 0
+      HP: 0
+      冷却回合: 0
+      行动点: 1
+    检定:
+      类型: attack_roll
+      攻击属性: 力量
+      对抗防御: 护甲等级
+      命中加值: 1
+    效果列表:
+      - kind: damage
+        scale: 力量
+        ratio: 1.0
+        flat: 3
+        damageType: pierce
+      - kind: apply_status
+        statusId: bleed
+        chance: 0.35
+        duration: 2
+        power: 4
+    AI约束:
+      使用倾向: attack
+      推荐时机: 常规输出
+被动定义表:
+  battle_focus:
+    id: battle_focus
+    名称: 战斗专注
+    描述: 回合开始时恢复少量法力。
+    触发时机: turn_start
+    条件: []
+    效果列表:
+      - kind: restore_mp
+        flat: 2
+背包:
+  potion_small:
+    id: potion_small
+    名称: 初级治疗药水
+    类型: healing
+    描述: 恢复 30 点生命值。
+    数量: 3
+    回复HP: 30
+    战斗可用: true
+  ether_small:
+    id: ether_small
+    名称: 初级法力药剂
+    类型: mana
+    描述: 恢复 15 点法力值。
+    数量: 2
+    回复MP: 15
+    战斗可用: true
+金币: 120
+战斗归档: []
+角色档案:
+  hero:
+    id: hero
+    名字: 伊芙琳
+    阵营: player
+    简介: 初出茅庐的法剑士。
+    标签: [主角, 冒险者]
+    等级: 3
+    经验值:
+      当前值: 40
+      升级所需值: 100
+    五维:
+      力量: 9
+      魅力: 8
+      体质: 10
+      智力: 12
+      精神: 11
+    资源:
+      生命值:
+        当前值: 96
+        最大值: 96
+      法力值:
+        当前值: 28
+        最大值: 28
+    派生基线:
+      护甲等级: 12
+      先攻修正: 2
+      控制强度: 1
+      异常抗性: 1
+    战斗定位:
+      职业: 法剑士
+      流派: 均衡输出
+      伤害偏向: hybrid
+    抗性:
+      伤害抗性:
+        fire: 0.1
+      状态抗性:
+        burn: 0.15
+    装备栏:
+      武器: 练习长剑
+      防具: 皮甲
+      饰品: [学徒纹章]
+    技能表:
+      - slotId: s1
+        skillId: basic_attack
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s2
+        skillId: fire_bolt
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s3
+        skillId: holy_light
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s4
+        skillId: guard_stance
+        已装备: true
+        已解锁: true
+        来源: 初始
+    被动表:
+      - slotId: p1
+        passiveId: battle_focus
+        已解锁: true
+        来源: 天赋
+    可用道具栏: [potion_small, ether_small]
+  goblin_scout:
+    id: goblin_scout
+    名字: 哥布林斥候
+    阵营: enemy
+    简介: 拿着锈刀四处游荡的哥布林。
+    标签: [敌人, 哥布林]
+    等级: 2
+    经验值:
+      当前值: 0
+      升级所需值: 100
+    五维:
+      力量: 8
+      魅力: 4
+      体质: 8
+      智力: 5
+      精神: 4
+    资源:
+      生命值:
+        当前值: 72
+        最大值: 72
+      法力值:
+        当前值: 6
+        最大值: 6
+    派生基线:
+      护甲等级: 10
+      先攻修正: 1
+      控制强度: 0
+      异常抗性: 0
+    战斗定位:
+      职业: 斥候
+      流派: 近战骚扰
+      伤害偏向: physical
+    抗性:
+      伤害抗性: {}
+      状态抗性:
+        bleed: 0.1
+    装备栏:
+      武器: 生锈短刀
+      防具: 破布甲
+      饰品: []
+    技能表:
+      - slotId: s1
+        skillId: goblin_stab
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s2
+        skillId: basic_attack
+        已装备: true
+        已解锁: true
+        来源: 初始
+    被动表: []
+    可用道具栏: []
+战斗状态:
+  battleId: demo-battle-001
+  状态: preparing
+  模式: pve
+  回合数: 1
+  当前阶段: turn_start
+  行动游标: 0
+  参战方:
+    ally:
+      阵营名: 我方
+      单位列表: []
+    enemy:
+      阵营名: 敌方
+      单位列表: []
+  先攻队列: []
+  日志: []
+  玩家输入态:
+    可操作: false
+    可用行动: [skill, item, defend, escape]
+  待处理指令:
+    actorId: hero__ally
+    actionType: skill
+    skillId: basic_attack
+    targetIds: [goblin_scout__enemy]
+    clientHint:
+      source: player_ui
