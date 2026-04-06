@@ -1,0 +1,7 @@
+{
+  "name": "tavern-helper-template-main",
+  "private": true,
+  "scripts": {
+    "validate:wangyou": "tsc -p tsconfig.wangyou.validate.json --noEmit"
+  }
+}

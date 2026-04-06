@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "isolatedModules": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "lib": [
+      "ES2020",
+      "DOM"
+    ]
+  },
+  "include": [
+    "validate/wangyou-globals.d.ts",
+    "src/wangyou/schema.ts",
+    "src/wangyou/脚本/**/*.ts",
+    "src/wangyou/界面/**/*.ts",
+    "src/wangyou/界面/**/*.vue"
+  ]
+}
