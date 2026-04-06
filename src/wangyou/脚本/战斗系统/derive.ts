@@ -7,13 +7,19 @@ function clamp(value: number, min: number, max: number): number {
 export const DERIVE_FORMULA_SOURCES = {
   HP: '角色档案.资源.生命值，运行时按 [0, 最大值] 钳制并初始化护盾为 0',
   MP: '角色档案.资源.法力值，运行时按 [0, 最大值] 钳制',
-  先攻: '派生基线.先攻修正 + floor((力量 + 魅力) / 4)',
+  生命层次: '1 + floor((等级 - 1) / 生命层次等级跨度)',
+  六项成长加成: 'max(0, 生命层次 - 1)，加到 力量/敏捷/体质/智力/感知/魅力，不加幸运',
+  先攻: '敏捷',
   物理防御: '10 + 体质 + floor(等级 / 2)',
-  精神防御: '10 + 精神 + floor(等级 / 2)',
-  命中加值: 'floor((力量 + 智力) / 4)',
-  闪避加值: 'floor(魅力 / 5)',
-  治疗强度: 'floor(精神 / 3)',
+  精神防御: '10 + 感知 + floor(等级 / 2)',
+  命中加值: 'floor(敏捷 / 3)',
+  闪避加值: 'floor(敏捷 / 3)',
+  治疗强度: 'floor(感知 / 2)',
 } as const;
+
+export function getLifeTier(level: number, tierSpan = 4): number {
+  return Math.max(1, 1 + Math.floor((Math.max(1, level) - 1) / Math.max(1, tierSpan)));
+}
 
 export function buildRuntimeSkill(skillId: string): RuntimeSkillState {
   return {
@@ -37,27 +43,34 @@ export function deriveUnitResources(record: CharacterRecord): BattleUnitState['�
 }
 
 export function deriveUnitAttributes(record: CharacterRecord): BattleUnitState['当前属性'] {
-  const 力量 = record.五维.力量;
-  const 魅力 = record.五维.魅力;
-  const 体质 = record.五维.体质;
-  const 智力 = record.五维.智力;
-  const 精神 = record.五维.精神;
+  const lifeTier = getLifeTier(record.等级);
+  const lifeTierBonus = Math.max(0, lifeTier - 1);
+  const 力量 = record.七维.力量 + lifeTierBonus;
+  const 敏捷 = record.七维.敏捷 + lifeTierBonus;
+  const 体质 = record.七维.体质 + lifeTierBonus;
+  const 智力 = record.七维.智力 + lifeTierBonus;
+  const 感知 = record.七维.感知 + lifeTierBonus;
+  const 魅力 = record.七维.魅力 + lifeTierBonus;
+  const 幸运 = record.七维.幸运;
 
   return {
     力量,
-    魅力,
+    敏捷,
     体质,
     智力,
-    精神,
+    感知,
+    魅力,
+    幸运,
     护甲等级: record.派生基线.护甲等级,
     物理防御: 10 + 体质 + Math.floor(record.等级 / 2),
-    精神防御: 10 + 精神 + Math.floor(record.等级 / 2),
-    命中加值: Math.floor((力量 + 智力) / 4),
-    闪避加值: Math.floor(魅力 / 5),
-    先攻: record.派生基线.先攻修正 + Math.floor((力量 + 魅力) / 4),
+    精神防御: 10 + 感知 + Math.floor(record.等级 / 2),
+    命中加值: Math.floor(敏捷 / 3),
+    闪避加值: Math.floor(敏捷 / 3),
+    先攻: 敏捷,
+    生命层次: lifeTier,
     异常抗性: record.派生基线.异常抗性,
     控制强度: record.派生基线.控制强度,
-    治疗强度: Math.floor(精神 / 3),
+    治疗强度: Math.floor(感知 / 2),
   };
 }
 

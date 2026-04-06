@@ -1,11 +1,11 @@
 const 阵营枚举 = z.enum(['player', 'ally', 'enemy', 'neutral']);
 const 伤害偏向枚举 = z.enum(['physical', 'magic', 'hybrid']);
 const 技能类型枚举 = z.enum(['主动', '反应', '持续']);
-const 技能标签枚举 = z.enum(['physical', 'magic', 'heal', 'buff', 'debuff', 'control', 'social']);
+const 技能标签枚举 = z.enum(['physical', 'magic', 'heal', 'buff', 'debuff', 'control', 'social', 'support']);
 const 目标类型枚举 = z.enum(['self', 'single_enemy', 'single_ally', 'all_enemies', 'all_allies', 'random_enemy']);
 const 射程枚举 = z.enum(['melee', 'ranged', 'global']);
 const 检定类型枚举 = z.enum(['attack_roll', 'saving_throw', 'auto_hit']);
-const 属性枚举 = z.enum(['力量', '魅力', '体质', '智力', '精神']);
+const 属性枚举 = z.enum(['力量', '敏捷', '体质', '智力', '感知', '魅力', '幸运']);
 const 对抗防御枚举 = z.enum(['护甲等级', '物理防御', '精神防御']);
 const 被动时机枚举 = z.enum([
   'battle_start',
@@ -44,17 +44,36 @@ const 日志类型枚举 = z.enum([
 const 状态分类枚举 = z.enum(['dot', 'control', 'mental', 'special']);
 const 修正目标枚举 = z.enum([
   '力量',
-  '魅力',
+  '敏捷',
   '体质',
   '智力',
-  '精神',
+  '感知',
+  '魅力',
+  '幸运',
   '护甲等级',
   '物理防御',
   '精神防御',
   '命中加值',
   '闪避加值',
   '先攻',
+  '生命层次',
 ]);
+
+function clampAttribute(value: number): number {
+  return _.clamp(value, 1, 20);
+}
+
+function buildDefault七维(base = 5) {
+  return {
+    力量: base,
+    敏捷: base,
+    体质: base,
+    智力: base,
+    感知: base,
+    魅力: base,
+    幸运: base,
+  };
+}
 const 修正类型枚举 = z.enum(['buff', 'debuff']);
 const 修正叠加枚举 = z.enum(['replace', 'stack']);
 const 行动类型枚举 = z.enum(['skill', 'item', 'defend', 'escape']);
@@ -69,7 +88,7 @@ const EffectBlockSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('heal'),
-    scale: z.enum(['精神', '智力', '魅力']),
+    scale: 属性枚举,
     ratio: z.coerce.number(),
     flat: z.coerce.number(),
   }),
@@ -80,7 +99,7 @@ const EffectBlockSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('shield'),
-    scale: z.enum(['精神', '体质', '智力']),
+    scale: 属性枚举,
     ratio: z.coerce.number(),
     flat: z.coerce.number(),
     duration: z.coerce.number(),
@@ -216,16 +235,19 @@ export const RuntimeUnitResourceSchema = z
 export const RuntimeUnitAttributesSchema = z
   .object({
     力量: z.coerce.number().prefault(0),
-    魅力: z.coerce.number().prefault(0),
+    敏捷: z.coerce.number().prefault(0),
     体质: z.coerce.number().prefault(0),
     智力: z.coerce.number().prefault(0),
-    精神: z.coerce.number().prefault(0),
+    感知: z.coerce.number().prefault(0),
+    魅力: z.coerce.number().prefault(0),
+    幸运: z.coerce.number().prefault(0),
     护甲等级: z.coerce.number().prefault(10),
     物理防御: z.coerce.number().prefault(10),
     精神防御: z.coerce.number().prefault(10),
     命中加值: z.coerce.number().prefault(0),
     闪避加值: z.coerce.number().prefault(0),
     先攻: z.coerce.number().prefault(0),
+    生命层次: z.coerce.number().prefault(1),
     异常抗性: z.coerce.number().prefault(0),
     控制强度: z.coerce.number().prefault(0),
     治疗强度: z.coerce.number().prefault(0),
@@ -302,9 +324,17 @@ export const Schema = z
           .object({
             等级上限: z.coerce.number().prefault(20),
             属性下限: z.coerce.number().prefault(1),
-            属性上限: z.coerce.number().prefault(30),
+            属性上限: z.coerce.number().prefault(20),
             技能栏上限: z.coerce.number().prefault(6),
             状态上限: z.coerce.number().prefault(8),
+            开局基础属性: z.coerce.number().prefault(5),
+            开局自由属性点: z.coerce.number().prefault(0),
+            每级属性点: z.coerce.number().prefault(1),
+            单级单项属性上限: z.coerce.number().prefault(1),
+            幸运可加点: z.boolean().prefault(false),
+            生命层次等级跨度: z.coerce.number().prefault(4),
+            生命层次伤害修正: z.coerce.number().prefault(0.1),
+            生命层次控制修正: z.coerce.number().prefault(1),
           })
           .prefault({}),
         资源规则: z
@@ -418,13 +448,20 @@ export const Schema = z
               升级所需值: z.coerce.number().prefault(100),
             })
             .prefault({}),
-          五维: z
+          成长: z
             .object({
-              力量: z.coerce.number().prefault(8),
-              魅力: z.coerce.number().prefault(8),
-              体质: z.coerce.number().prefault(8),
-              智力: z.coerce.number().prefault(8),
-              精神: z.coerce.number().prefault(8),
+              未分配属性点: z.coerce.number().prefault(0),
+            })
+            .prefault({}),
+          七维: z
+            .object({
+              力量: z.coerce.number().transform(clampAttribute).prefault(5),
+              敏捷: z.coerce.number().transform(clampAttribute).prefault(5),
+              体质: z.coerce.number().transform(clampAttribute).prefault(5),
+              智力: z.coerce.number().transform(clampAttribute).prefault(5),
+              感知: z.coerce.number().transform(clampAttribute).prefault(5),
+              魅力: z.coerce.number().transform(clampAttribute).prefault(5),
+              幸运: z.coerce.number().transform(clampAttribute).prefault(5),
             })
             .prefault({}),
           资源: z
@@ -440,7 +477,6 @@ export const Schema = z
           派生基线: z
             .object({
               护甲等级: z.coerce.number().prefault(10),
-              先攻修正: z.coerce.number().prefault(0),
               控制强度: z.coerce.number().prefault(0),
               异常抗性: z.coerce.number().prefault(0),
             })
@@ -566,6 +602,7 @@ export const Schema = z
                   mpAfter: z.coerce.number(),
                   gainedExp: z.coerce.number().optional(),
                   newLevel: z.coerce.number().optional(),
+                  gainedAttributePoints: z.coerce.number().optional(),
                   defeated: z.boolean().optional(),
                 }),
               )
@@ -577,13 +614,30 @@ export const Schema = z
       .prefault(null),
   })
   .transform(data => {
+    const normalizedCharacters = Object.fromEntries(
+      Object.entries(data.角色档案).map(([key, record]) => {
+        const legacyStats = (record as typeof record & { 六维?: typeof record.七维 }).六维;
+        return [
+          key,
+          {
+            ...record,
+            七维: record.七维 ?? (legacyStats ? { ...buildDefault七维(), ...legacyStats, 幸运: 5 } : buildDefault七维()),
+          },
+        ];
+      }),
+    ) as typeof data.角色档案;
+
     const 战斗状态 = data.战斗状态;
     if (!战斗状态) {
-      return data;
+      return {
+        ...data,
+        角色档案: normalizedCharacters,
+      };
     }
 
     return {
       ...data,
+      角色档案: normalizedCharacters,
       战斗状态: {
         ...战斗状态,
         参战方: {

@@ -273,7 +273,7 @@ function resolveCommand(
 
   state.当前阶段 = 'resolve_action';
   if (command.actionType === 'skill') {
-    const result = resolveSkillAction(state, validated.context);
+    const result = resolveSkillAction(data, state, validated.context);
     logs.push(...result.logs);
     rolls.push(...result.rolls);
   } else if (command.actionType === 'item') {
@@ -336,6 +336,7 @@ function resolveDefendAction(state: BattleState, actor: UnitLocator): BattleLogE
 }
 
 function resolveSkillAction(
+  data: StatData,
   state: BattleState,
   context: ValidatedCommandContext,
 ): { logs: BattleLogEntry[]; rolls: RollResult[] } {
@@ -359,7 +360,7 @@ function resolveSkillAction(
       roll = resolveAttackCheck(actor.unit, target.unit, skill);
       checkPassed = roll.success;
     } else if (skill.检定.类型 === 'saving_throw') {
-      roll = resolveSavingThrow(actor.unit, target.unit, skill);
+      roll = resolveSavingThrow(actor.unit, target.unit, skill, data.规则配置);
       checkPassed = !roll.success;
     }
     if (roll) {
@@ -395,6 +396,7 @@ function resolveSkillAction(
         actor: actor.unit,
         target: target.unit,
         skill,
+        rules: data.规则配置,
         createLog,
       }),
     );

@@ -1,5 +1,14 @@
 import type { BattleUnitState, RollResult, RuleConfig, SkillDefinition } from './types';
 
+function getLuckModifier(unit: BattleUnitState): number {
+  return Math.floor((unit.当前属性.幸运 - 5) / 5);
+}
+
+function getLifeTierControlBonus(actor: BattleUnitState, target: BattleUnitState, rules: RuleConfig): number {
+  const perTier = rules.数值规则.生命层次控制修正 ?? 1;
+  return (actor.当前属性.生命层次 - target.当前属性.生命层次) * perTier;
+}
+
 function getDefenseValue(target: BattleUnitState, key: SkillDefinition['检定']['对抗防御'] | undefined): number {
   if (key === '物理防御') return target.当前属性.物理防御;
   if (key === '精神防御') return target.当前属性.精神防御;
@@ -43,7 +52,11 @@ export function resolveAttackCheck(
   target: BattleUnitState,
   skill: SkillDefinition,
 ): RollResult {
-  const modifier = getAttribute(actor, skill.检定.攻击属性) + (skill.检定.命中加值 ?? 0) + actor.当前属性.命中加值;
+  const modifier =
+    getAttribute(actor, skill.检定.攻击属性) +
+    (skill.检定.命中加值 ?? 0) +
+    actor.当前属性.命中加值 +
+    getLuckModifier(actor);
   const roll = rollD20(modifier, { advantage: skill.检定.优势, disadvantage: skill.检定.劣势 });
   roll.actorId = actor.unitId;
   roll.targetId = target.unitId;
@@ -56,10 +69,13 @@ export function resolveSavingThrow(
   actor: BattleUnitState,
   target: BattleUnitState,
   skill: SkillDefinition,
+  rules: RuleConfig,
 ): RollResult {
-  const modifier = getAttribute(target, skill.检定.豁免属性);
+  const modifier = getAttribute(target, skill.检定.豁免属性) + getLuckModifier(target);
   const raw = _.random(1, 20);
-  const dc = skill.检定.基础DC ?? 10 + getAttribute(actor, skill.检定.攻击属性);
+  const dc =
+    (skill.检定.基础DC ?? 10 + getAttribute(actor, skill.检定.攻击属性)) +
+    getLifeTierControlBonus(actor, target, rules);
   return {
     rollType: 'save',
     actorId: actor.unitId,
@@ -76,7 +92,7 @@ export function resolveSavingThrow(
 }
 
 export function resolveEscapeAction(actor: BattleUnitState, rules: RuleConfig): RollResult {
-  const modifier = actor.当前属性.先攻 + actor.当前属性.魅力;
+  const modifier = actor.当前属性.敏捷 + actor.当前属性.感知 + getLuckModifier(actor);
   const raw = _.random(1, 20);
   return {
     rollType: 'escape',

@@ -25,6 +25,9 @@
       <span>物防 {{ unit.当前属性.物理防御 }}</span>
       <span>精防 {{ unit.当前属性.精神防御 }}</span>
       <span>先攻 {{ unit.当前属性.先攻 }}</span>
+      <span>敏捷 {{ unit.当前属性.敏捷 }}</span>
+      <span>幸运 {{ unit.当前属性.幸运 }}</span>
+      <span>层次 {{ unit.当前属性.生命层次 }}</span>
     </div>
 
     <div class="status-row">
@@ -63,7 +66,9 @@ const mpWidth = computed(
   () => `${Math.max(0, Math.min(100, (props.unit.当前资源.MP / Math.max(1, props.unit.当前资源.MPMax)) * 100))}%`,
 );
 const metaText = computed(() =>
-  props.side === 'enemy' ? `敌方 · ${props.unit.当前属性.护甲等级} AC` : `我方 · 命中 ${props.unit.当前属性.命中加值}`,
+  props.side === 'enemy'
+    ? `敌方 · 先攻 ${props.unit.当前属性.先攻} / 层次 ${props.unit.当前属性.生命层次}`
+    : `我方 · 敏捷 ${props.unit.当前属性.敏捷} / 幸运 ${props.unit.当前属性.幸运}`,
 );
 const badgeClass = computed(() => (props.side === 'enemy' ? 'danger' : 'ally'));
 const emptyStatusText = computed(() => (props.side === 'enemy' ? '无异常' : '状态正常'));

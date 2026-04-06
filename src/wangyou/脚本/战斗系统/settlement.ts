@@ -138,15 +138,27 @@ function buildCharacterChanges(
       let projectedLevel = record.等级;
       let projectedExp = record.经验值.当前值 + gainedExp;
       let threshold = record.经验值.升级所需值 || getLevelExpRequirement(projectedLevel);
+      let projectedGainLevels = 0;
 
       while (projectedExp >= threshold && projectedLevel < data.规则配置.数值规则.等级上限) {
         projectedExp -= threshold;
         projectedLevel += 1;
+        projectedGainLevels += 1;
         threshold = getLevelExpRequirement(projectedLevel);
       }
 
       if (projectedLevel !== record.等级) {
         newLevel = projectedLevel;
+        const perLevelAttributePoint = data.规则配置.数值规则.每级属性点 ?? 1;
+        return {
+          characterId: unit.sourceCharacterId,
+          hpAfter: unit.当前资源.HP,
+          mpAfter: unit.当前资源.MP,
+          gainedExp,
+          newLevel,
+          gainedAttributePoints: projectedGainLevels * perLevelAttributePoint,
+          defeated: !unit.是否存活,
+        };
       }
     }
 
@@ -220,14 +232,17 @@ function applyLevelProgress(
   record: StatData['角色档案'][string],
   gainedExp: number,
   levelCap: number,
+  perLevelAttributePoint: number,
 ): number | undefined {
   let nextLevel = record.等级;
   let currentExp = record.经验值.当前值 + gainedExp;
   let required = record.经验值.升级所需值 || getLevelExpRequirement(nextLevel);
+  let gainedLevels = 0;
 
   while (currentExp >= required && nextLevel < levelCap) {
     currentExp -= required;
     nextLevel += 1;
+    gainedLevels += 1;
     required = getLevelExpRequirement(nextLevel);
   }
 
@@ -236,6 +251,7 @@ function applyLevelProgress(
 
   if (nextLevel !== record.等级) {
     record.等级 = nextLevel;
+    record.成长.未分配属性点 += gainedLevels * perLevelAttributePoint;
     return nextLevel;
   }
 
@@ -260,9 +276,17 @@ export function applyBattleSummaryToRecords(data: StatData): StatData {
     record.资源.法力值.当前值 = clamp(change.mpAfter, 0, record.资源.法力值.最大值);
 
     if (record.阵营 !== 'enemy' && change.gainedExp) {
-      const newLevel = applyLevelProgress(record, change.gainedExp, next.规则配置.数值规则.等级上限);
+      const perLevelAttributePoint = next.规则配置.数值规则.每级属性点 ?? 1;
+      const oldPoints = record.成长.未分配属性点;
+      const newLevel = applyLevelProgress(
+        record,
+        change.gainedExp,
+        next.规则配置.数值规则.等级上限,
+        perLevelAttributePoint,
+      );
       if (newLevel) {
         change.newLevel = newLevel;
+        change.gainedAttributePoints = record.成长.未分配属性点 - oldPoints;
       }
     }
   });

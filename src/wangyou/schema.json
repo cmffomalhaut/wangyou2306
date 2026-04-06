@@ -65,7 +65,7 @@
               "type": "number"
             },
             "属性上限": {
-              "default": 30,
+              "default": 20,
               "type": "number"
             },
             "技能栏上限": {
@@ -74,6 +74,38 @@
             },
             "状态上限": {
               "default": 8,
+              "type": "number"
+            },
+            "开局基础属性": {
+              "default": 5,
+              "type": "number"
+            },
+            "开局自由属性点": {
+              "default": 0,
+              "type": "number"
+            },
+            "每级属性点": {
+              "default": 1,
+              "type": "number"
+            },
+            "单级单项属性上限": {
+              "default": 1,
+              "type": "number"
+            },
+            "幸运可加点": {
+              "default": false,
+              "type": "boolean"
+            },
+            "生命层次等级跨度": {
+              "default": 4,
+              "type": "number"
+            },
+            "生命层次伤害修正": {
+              "default": 0.1,
+              "type": "number"
+            },
+            "生命层次控制修正": {
+              "default": 1,
               "type": "number"
             }
           }
@@ -440,28 +472,46 @@
               }
             }
           },
-          "五维": {
+          "成长": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "未分配属性点": {
+                "default": 0,
+                "type": "number"
+              }
+            }
+          },
+          "七维": {
             "default": {},
             "type": "object",
             "properties": {
               "力量": {
-                "default": 8,
+                "default": 5,
                 "type": "number"
               },
-              "魅力": {
-                "default": 8,
+              "敏捷": {
+                "default": 5,
                 "type": "number"
               },
               "体质": {
-                "default": 8,
+                "default": 5,
                 "type": "number"
               },
               "智力": {
-                "default": 8,
+                "default": 5,
                 "type": "number"
               },
-              "精神": {
-                "default": 8,
+              "感知": {
+                "default": 5,
+                "type": "number"
+              },
+              "魅力": {
+                "default": 5,
+                "type": "number"
+              },
+              "幸运": {
+                "default": 5,
                 "type": "number"
               }
             }
@@ -1171,10 +1221,12 @@
       "type": "string",
       "enum": [
         "力量",
-        "魅力",
+        "敏捷",
         "体质",
         "智力",
-        "精神"
+        "感知",
+        "魅力",
+        "幸运"
       ]
     },
     "__schema2": {
@@ -1214,13 +1266,13 @@
               "type": "string",
               "const": "heal"
             },
-            "scale": {
-              "type": "string",
-              "enum": [
-                "精神",
-                "智力",
-                "魅力"
-              ]
+              "scale": {
+                "type": "string",
+                "enum": [
+                  "感知",
+                  "智力",
+                  "魅力"
+                ]
             },
             "ratio": {
               "type": "number"
@@ -1262,14 +1314,9 @@
               "type": "string",
               "const": "shield"
             },
-            "scale": {
-              "type": "string",
-              "enum": [
-                "精神",
-                "体质",
-                "智力"
-              ]
-            },
+              "scale": {
+                "$ref": "#/$defs/__schema1"
+              },
             "ratio": {
               "type": "number"
             },
@@ -1490,7 +1537,7 @@
                   "力量": {
                     "type": "number"
                   },
-                  "魅力": {
+                  "敏捷": {
                     "type": "number"
                   },
                   "体质": {
@@ -1499,7 +1546,13 @@
                   "智力": {
                     "type": "number"
                   },
-                  "精神": {
+                  "感知": {
+                    "type": "number"
+                  },
+                  "魅力": {
+                    "type": "number"
+                  },
+                  "幸运": {
                     "type": "number"
                   },
                   "护甲等级": {
@@ -1521,6 +1574,10 @@
                     "type": "number"
                   },
                   "先攻": {
+                    "type": "number"
+                  },
+                  "生命层次": {
+                    "default": 1,
                     "type": "number"
                   },
                   "异常抗性": {
@@ -1624,16 +1681,19 @@
                       "type": "string",
                       "enum": [
                         "力量",
-                        "魅力",
+                        "敏捷",
                         "体质",
                         "智力",
-                        "精神",
+                        "感知",
+                        "魅力",
+                        "幸运",
                         "护甲等级",
                         "物理防御",
                         "精神防御",
                         "命中加值",
                         "闪避加值",
-                        "先攻"
+                        "先攻",
+                        "生命层次"
                       ]
                     },
                     "类型": {
