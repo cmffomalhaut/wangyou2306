@@ -1,0 +1,1713 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "世界": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "时间": {
+          "default": "未定义",
+          "type": "string"
+        },
+        "地点": {
+          "default": "未定义",
+          "type": "string"
+        },
+        "剧情上下文": {
+          "default": "待初始化",
+          "type": "string"
+        }
+      }
+    },
+    "规则配置": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "版本": {
+          "default": "dnd-lite-v1",
+          "type": "string"
+        },
+        "检定模式": {
+          "default": "dnd",
+          "type": "string",
+          "const": "dnd"
+        },
+        "骰子": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "攻击骰": {
+              "default": "1d20",
+              "type": "string",
+              "const": "1d20"
+            },
+            "暴击阈值": {
+              "default": 20,
+              "type": "number"
+            },
+            "失误阈值": {
+              "default": 1,
+              "type": "number"
+            }
+          }
+        },
+        "数值规则": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "等级上限": {
+              "default": 20,
+              "type": "number"
+            },
+            "属性下限": {
+              "default": 1,
+              "type": "number"
+            },
+            "属性上限": {
+              "default": 30,
+              "type": "number"
+            },
+            "技能栏上限": {
+              "default": 6,
+              "type": "number"
+            },
+            "状态上限": {
+              "default": 8,
+              "type": "number"
+            }
+          }
+        },
+        "资源规则": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "默认行动点": {
+              "default": 1,
+              "type": "number"
+            },
+            "回合MP恢复": {
+              "default": 2,
+              "type": "number"
+            },
+            "防御行动减伤": {
+              "default": 0.4,
+              "type": "number"
+            },
+            "逃跑基础DC": {
+              "default": 13,
+              "type": "number"
+            },
+            "战斗金币基础值": {
+              "default": 12,
+              "type": "number"
+            },
+            "战斗金币等级系数": {
+              "default": 4,
+              "type": "number"
+            },
+            "战斗掉落基础概率": {
+              "default": 0.35,
+              "type": "number"
+            }
+          }
+        },
+        "敌方掉落表": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string"
+                },
+                "chance": {
+                  "type": "number"
+                },
+                "minCount": {
+                  "default": 1,
+                  "type": "number"
+                },
+                "maxCount": {
+                  "default": 1,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "itemId",
+                "chance"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "技能定义表": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "名称": {
+            "type": "string"
+          },
+          "类型": {
+            "type": "string",
+            "enum": [
+              "主动",
+              "反应",
+              "持续"
+            ]
+          },
+          "标签": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "physical",
+                "magic",
+                "heal",
+                "buff",
+                "debuff",
+                "control",
+                "social"
+              ]
+            }
+          },
+          "描述": {
+            "type": "string"
+          },
+          "目标类型": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "射程": {
+            "type": "string",
+            "enum": [
+              "melee",
+              "ranged",
+              "global"
+            ]
+          },
+          "消耗": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "MP": {
+                "type": "number"
+              },
+              "HP": {
+                "type": "number"
+              },
+              "冷却回合": {
+                "type": "number"
+              },
+              "行动点": {
+                "default": 1,
+                "type": "number"
+              }
+            }
+          },
+          "检定": {
+            "type": "object",
+            "properties": {
+              "类型": {
+                "type": "string",
+                "enum": [
+                  "attack_roll",
+                  "saving_throw",
+                  "auto_hit"
+                ]
+              },
+              "攻击属性": {
+                "$ref": "#/$defs/__schema1"
+              },
+              "对抗防御": {
+                "type": "string",
+                "enum": [
+                  "护甲等级",
+                  "物理防御",
+                  "精神防御"
+                ]
+              },
+              "豁免属性": {
+                "$ref": "#/$defs/__schema1"
+              },
+              "基础DC": {
+                "type": "number"
+              },
+              "命中加值": {
+                "type": "number"
+              },
+              "优势": {
+                "type": "boolean"
+              },
+              "劣势": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "类型"
+            ]
+          },
+          "效果列表": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema2"
+            }
+          },
+          "AI约束": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "使用倾向": {
+                "default": "attack",
+                "type": "string",
+                "enum": [
+                  "attack",
+                  "burst",
+                  "control",
+                  "survive",
+                  "support"
+                ]
+              },
+              "推荐时机": {
+                "default": "常规回合",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "名称",
+          "类型",
+          "目标类型",
+          "射程",
+          "检定"
+        ]
+      }
+    },
+    "被动定义表": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "名称": {
+            "type": "string"
+          },
+          "描述": {
+            "type": "string"
+          },
+          "触发时机": {
+            "type": "string",
+            "enum": [
+              "battle_start",
+              "turn_start",
+              "turn_end",
+              "before_attack",
+              "after_attack",
+              "before_damaged",
+              "after_damaged",
+              "on_kill",
+              "on_defeat"
+            ]
+          },
+          "条件": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "operator": {
+                  "default": "eq",
+                  "type": "string",
+                  "enum": [
+                    "eq",
+                    "neq",
+                    "gt",
+                    "gte",
+                    "lt",
+                    "lte",
+                    "includes"
+                  ]
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "field",
+                "value"
+              ]
+            }
+          },
+          "效果列表": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema2"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "名称",
+          "触发时机"
+        ]
+      }
+    },
+    "角色档案": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "名字": {
+            "type": "string"
+          },
+          "阵营": {
+            "type": "string",
+            "enum": [
+              "player",
+              "ally",
+              "enemy",
+              "neutral"
+            ]
+          },
+          "简介": {
+            "type": "string"
+          },
+          "标签": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "等级": {
+            "default": 1,
+            "type": "number"
+          },
+          "经验值": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "当前值": {
+                "type": "number"
+              },
+              "升级所需值": {
+                "default": 100,
+                "type": "number"
+              }
+            }
+          },
+          "五维": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "力量": {
+                "default": 8,
+                "type": "number"
+              },
+              "魅力": {
+                "default": 8,
+                "type": "number"
+              },
+              "体质": {
+                "default": 8,
+                "type": "number"
+              },
+              "智力": {
+                "default": 8,
+                "type": "number"
+              },
+              "精神": {
+                "default": 8,
+                "type": "number"
+              }
+            }
+          },
+          "资源": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "生命值": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "当前值": {
+                    "default": 100,
+                    "type": "number"
+                  },
+                  "最大值": {
+                    "default": 100,
+                    "type": "number"
+                  }
+                }
+              },
+              "法力值": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "当前值": {
+                    "default": 30,
+                    "type": "number"
+                  },
+                  "最大值": {
+                    "default": 30,
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "派生基线": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "护甲等级": {
+                "default": 10,
+                "type": "number"
+              },
+              "先攻修正": {
+                "type": "number"
+              },
+              "控制强度": {
+                "type": "number"
+              },
+              "异常抗性": {
+                "type": "number"
+              }
+            }
+          },
+          "战斗定位": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "职业": {
+                "default": "冒险者",
+                "type": "string"
+              },
+              "流派": {
+                "default": "均衡",
+                "type": "string"
+              },
+              "伤害偏向": {
+                "default": "hybrid",
+                "type": "string",
+                "enum": [
+                  "physical",
+                  "magic",
+                  "hybrid"
+                ]
+              }
+            }
+          },
+          "抗性": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "伤害抗性": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "状态抗性": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "装备栏": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "武器": {
+                "type": "string"
+              },
+              "防具": {
+                "type": "string"
+              },
+              "饰品": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "技能表": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slotId": {
+                  "type": "string"
+                },
+                "skillId": {
+                  "type": "string"
+                },
+                "已装备": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "已解锁": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "来源": {
+                  "default": "初始",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "slotId",
+                "skillId"
+              ]
+            }
+          },
+          "被动表": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slotId": {
+                  "type": "string"
+                },
+                "passiveId": {
+                  "type": "string"
+                },
+                "已解锁": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "来源": {
+                  "default": "初始",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "slotId",
+                "passiveId"
+              ]
+            }
+          },
+          "可用道具栏": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "名字",
+          "阵营"
+        ]
+      }
+    },
+    "背包": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "名称": {
+            "type": "string"
+          },
+          "类型": {
+            "default": "healing",
+            "type": "string",
+            "enum": [
+              "healing",
+              "mana",
+              "revive",
+              "buff"
+            ]
+          },
+          "描述": {
+            "type": "string"
+          },
+          "目标类型": {
+            "default": "self",
+            "$ref": "#/$defs/__schema0"
+          },
+          "数量": {
+            "type": "number"
+          },
+          "回复HP": {
+            "type": "number"
+          },
+          "回复MP": {
+            "type": "number"
+          },
+          "战斗可用": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "名称"
+        ]
+      }
+    },
+    "金币": {
+      "type": "number"
+    },
+    "战斗归档": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "battleId": {
+            "type": "string"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "ally",
+              "enemy",
+              "draw",
+              "escape"
+            ]
+          },
+          "rounds": {
+            "type": "number"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "rewards": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "battleId",
+          "winner",
+          "rounds",
+          "summary",
+          "timestamp"
+        ]
+      }
+    },
+    "战斗状态": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "battleId": {
+              "type": "string"
+            },
+            "状态": {
+              "type": "string",
+              "enum": [
+                "idle",
+                "preparing",
+                "running",
+                "resolving",
+                "ended"
+              ]
+            },
+            "模式": {
+              "type": "string",
+              "enum": [
+                "pve",
+                "pvp",
+                "boss"
+              ]
+            },
+            "回合数": {
+              "type": "number"
+            },
+            "当前行动单位Id": {
+              "type": "string"
+            },
+            "当前阶段": {
+              "type": "string",
+              "enum": [
+                "turn_start",
+                "select_action",
+                "select_target",
+                "resolve_action",
+                "turn_end",
+                "battle_end"
+              ]
+            },
+            "行动游标": {
+              "type": "number"
+            },
+            "参战方": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "ally": {
+                  "default": {
+                    "阵营名": "我方",
+                    "单位列表": []
+                  },
+                  "$ref": "#/$defs/__schema3"
+                },
+                "enemy": {
+                  "default": {
+                    "阵营名": "敌方",
+                    "单位列表": []
+                  },
+                  "$ref": "#/$defs/__schema3"
+                }
+              }
+            },
+            "先攻队列": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "日志": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "turn": {
+                    "type": "number"
+                  },
+                  "phase": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "system",
+                      "roll",
+                      "damage",
+                      "heal",
+                      "status_apply",
+                      "status_remove",
+                      "modifier_apply",
+                      "resource",
+                      "action",
+                      "defeat",
+                      "victory"
+                    ]
+                  },
+                  "actorId": {
+                    "type": "string"
+                  },
+                  "targetId": {
+                    "type": "string"
+                  },
+                  "skillId": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "payload": {
+                    "type": "object",
+                    "properties": {
+                      "roll": {
+                        "type": "object",
+                        "properties": {
+                          "rollType": {
+                            "type": "string",
+                            "enum": [
+                              "attack",
+                              "save",
+                              "damage",
+                              "escape",
+                              "initiative"
+                            ]
+                          },
+                          "actorId": {
+                            "type": "string"
+                          },
+                          "targetId": {
+                            "type": "string"
+                          },
+                          "dice": {
+                            "type": "string"
+                          },
+                          "rawRolls": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "finalRoll": {
+                            "type": "number"
+                          },
+                          "modifier": {
+                            "type": "number"
+                          },
+                          "dc": {
+                            "type": "number"
+                          },
+                          "targetAC": {
+                            "type": "number"
+                          },
+                          "success": {
+                            "type": "boolean"
+                          },
+                          "isCriticalSuccess": {
+                            "type": "boolean"
+                          },
+                          "isCriticalFail": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "damageBreakdown": {
+                        "type": "object",
+                        "properties": {
+                          "base": {
+                            "type": "number"
+                          },
+                          "reduced": {
+                            "type": "number"
+                          },
+                          "shieldAbsorbed": {
+                            "type": "number"
+                          },
+                          "final": {
+                            "type": "number"
+                          },
+                          "damageType": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "statusMeta": {
+                        "type": "object",
+                        "properties": {
+                          "statusId": {
+                            "type": "string"
+                          },
+                          "duration": {
+                            "type": "number"
+                          },
+                          "stacks": {
+                            "type": "number"
+                          },
+                          "chance": {
+                            "type": "number"
+                          },
+                          "applied": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "turn",
+                  "phase",
+                  "type",
+                  "text"
+                ]
+              }
+            },
+            "随机种子": {
+              "type": "string"
+            },
+            "玩家输入态": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "可操作": {
+                  "type": "boolean"
+                },
+                "待选技能Id": {
+                  "type": "string"
+                },
+                "待选目标Id": {
+                  "type": "string"
+                },
+                "可用行动": {
+                  "default": [
+                    "skill",
+                    "item",
+                    "defend",
+                    "escape"
+                  ],
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/__schema4"
+                  }
+                }
+              }
+            },
+            "待处理指令": {
+              "type": "object",
+              "properties": {
+                "actorId": {
+                  "type": "string"
+                },
+                "actionType": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "skillId": {
+                  "type": "string"
+                },
+                "itemId": {
+                  "type": "string"
+                },
+                "targetIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "clientHint": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "default": "player_ui",
+                      "type": "string",
+                      "enum": [
+                        "player_ui",
+                        "enemy_ai"
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "actorId",
+                "actionType"
+              ]
+            },
+            "结算结果": {
+              "type": "object",
+              "properties": {
+                "winner": {
+                  "type": "string",
+                  "enum": [
+                    "ally",
+                    "enemy",
+                    "draw",
+                    "escape"
+                  ]
+                },
+                "rounds": {
+                  "type": "number"
+                },
+                "expGain": {
+                  "type": "number"
+                },
+                "goldGain": {
+                  "type": "number"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "rewardTexts": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "itemDrops": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "itemId": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "itemId",
+                      "count"
+                    ]
+                  }
+                },
+                "characterChanges": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "characterId": {
+                        "type": "string"
+                      },
+                      "hpAfter": {
+                        "type": "number"
+                      },
+                      "mpAfter": {
+                        "type": "number"
+                      },
+                      "gainedExp": {
+                        "type": "number"
+                      },
+                      "newLevel": {
+                        "type": "number"
+                      },
+                      "defeated": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "characterId",
+                      "hpAfter",
+                      "mpAfter"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "winner",
+                "rounds"
+              ]
+            }
+          },
+          "required": [
+            "battleId",
+            "状态",
+            "模式",
+            "回合数",
+            "当前阶段"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "__schema0": {
+      "type": "string",
+      "enum": [
+        "self",
+        "single_enemy",
+        "single_ally",
+        "all_enemies",
+        "all_allies",
+        "random_enemy"
+      ]
+    },
+    "__schema1": {
+      "type": "string",
+      "enum": [
+        "力量",
+        "魅力",
+        "体质",
+        "智力",
+        "精神"
+      ]
+    },
+    "__schema2": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "damage"
+            },
+            "scale": {
+              "$ref": "#/$defs/__schema1"
+            },
+            "ratio": {
+              "type": "number"
+            },
+            "flat": {
+              "type": "number"
+            },
+            "damageType": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "scale",
+            "ratio",
+            "flat",
+            "damageType"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "heal"
+            },
+            "scale": {
+              "type": "string",
+              "enum": [
+                "精神",
+                "智力",
+                "魅力"
+              ]
+            },
+            "ratio": {
+              "type": "number"
+            },
+            "flat": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "scale",
+            "ratio",
+            "flat"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "restore_mp"
+            },
+            "flat": {
+              "type": "number"
+            },
+            "ratio": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "flat"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "shield"
+            },
+            "scale": {
+              "type": "string",
+              "enum": [
+                "精神",
+                "体质",
+                "智力"
+              ]
+            },
+            "ratio": {
+              "type": "number"
+            },
+            "flat": {
+              "type": "number"
+            },
+            "duration": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "scale",
+            "ratio",
+            "flat",
+            "duration"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "apply_status"
+            },
+            "statusId": {
+              "type": "string"
+            },
+            "chance": {
+              "type": "number"
+            },
+            "duration": {
+              "type": "number"
+            },
+            "power": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "statusId",
+            "chance",
+            "duration"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "remove_status"
+            },
+            "removeTags": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "count": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "count"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "add_modifier"
+            },
+            "modifierId": {
+              "type": "string"
+            },
+            "duration": {
+              "type": "number"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "modifierId",
+            "duration",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "dispel"
+            },
+            "count": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "count"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "taunt"
+            },
+            "duration": {
+              "type": "number"
+            },
+            "dc": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "duration"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "forced_move"
+            },
+            "moveType": {
+              "type": "string",
+              "enum": [
+                "push",
+                "pull",
+                "break_guard"
+              ]
+            },
+            "distance": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "moveType",
+            "distance"
+          ]
+        }
+      ]
+    },
+    "__schema3": {
+      "type": "object",
+      "properties": {
+        "阵营名": {
+          "type": "string"
+        },
+        "单位列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unitId": {
+                "type": "string"
+              },
+              "sourceCharacterId": {
+                "type": "string"
+              },
+              "名字": {
+                "type": "string"
+              },
+              "阵营": {
+                "type": "string",
+                "enum": [
+                  "ally",
+                  "enemy"
+                ]
+              },
+              "是否存活": {
+                "default": true,
+                "type": "boolean"
+              },
+              "是否可行动": {
+                "default": true,
+                "type": "boolean"
+              },
+              "当前资源": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "HP": {
+                    "type": "number"
+                  },
+                  "HPMax": {
+                    "default": 1,
+                    "type": "number"
+                  },
+                  "MP": {
+                    "type": "number"
+                  },
+                  "MPMax": {
+                    "default": 1,
+                    "type": "number"
+                  },
+                  "Shield": {
+                    "type": "number"
+                  }
+                }
+              },
+              "当前属性": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "力量": {
+                    "type": "number"
+                  },
+                  "魅力": {
+                    "type": "number"
+                  },
+                  "体质": {
+                    "type": "number"
+                  },
+                  "智力": {
+                    "type": "number"
+                  },
+                  "精神": {
+                    "type": "number"
+                  },
+                  "护甲等级": {
+                    "default": 10,
+                    "type": "number"
+                  },
+                  "物理防御": {
+                    "default": 10,
+                    "type": "number"
+                  },
+                  "精神防御": {
+                    "default": 10,
+                    "type": "number"
+                  },
+                  "命中加值": {
+                    "type": "number"
+                  },
+                  "闪避加值": {
+                    "type": "number"
+                  },
+                  "先攻": {
+                    "type": "number"
+                  },
+                  "异常抗性": {
+                    "type": "number"
+                  },
+                  "控制强度": {
+                    "type": "number"
+                  },
+                  "治疗强度": {
+                    "type": "number"
+                  }
+                }
+              },
+              "技能栏": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "skillId": {
+                      "type": "string"
+                    },
+                    "当前冷却": {
+                      "type": "number"
+                    },
+                    "已禁用": {
+                      "type": "boolean"
+                    },
+                    "禁用原因": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "skillId"
+                  ]
+                }
+              },
+              "状态列表": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "statusId": {
+                      "type": "string"
+                    },
+                    "名称": {
+                      "type": "string"
+                    },
+                    "分类": {
+                      "type": "string",
+                      "enum": [
+                        "dot",
+                        "control",
+                        "mental",
+                        "special"
+                      ]
+                    },
+                    "来源单位Id": {
+                      "type": "string"
+                    },
+                    "层数": {
+                      "default": 1,
+                      "type": "number"
+                    },
+                    "剩余回合": {
+                      "default": 1,
+                      "type": "number"
+                    },
+                    "强度": {
+                      "type": "number"
+                    },
+                    "标签": {
+                      "default": [],
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "statusId",
+                    "名称",
+                    "分类"
+                  ]
+                }
+              },
+              "修正器列表": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "modifierId": {
+                      "type": "string"
+                    },
+                    "名称": {
+                      "type": "string"
+                    },
+                    "目标属性": {
+                      "type": "string",
+                      "enum": [
+                        "力量",
+                        "魅力",
+                        "体质",
+                        "智力",
+                        "精神",
+                        "护甲等级",
+                        "物理防御",
+                        "精神防御",
+                        "命中加值",
+                        "闪避加值",
+                        "先攻"
+                      ]
+                    },
+                    "类型": {
+                      "type": "string",
+                      "enum": [
+                        "buff",
+                        "debuff"
+                      ]
+                    },
+                    "叠加方式": {
+                      "type": "string",
+                      "enum": [
+                        "replace",
+                        "stack"
+                      ]
+                    },
+                    "数值": {
+                      "type": "number"
+                    },
+                    "剩余回合": {
+                      "type": "number"
+                    },
+                    "来源单位Id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "modifierId",
+                    "名称",
+                    "目标属性",
+                    "类型",
+                    "叠加方式",
+                    "数值",
+                    "剩余回合"
+                  ]
+                }
+              },
+              "标记": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "防御中": {
+                    "type": "boolean"
+                  },
+                  "已用反应": {
+                    "type": "boolean"
+                  },
+                  "本回合已行动": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "required": [
+              "unitId",
+              "sourceCharacterId",
+              "名字",
+              "阵营"
+            ]
+          }
+        }
+      },
+      "required": [
+        "阵营名"
+      ]
+    },
+    "__schema4": {
+      "type": "string",
+      "enum": [
+        "skill",
+        "item",
+        "defend",
+        "escape"
+      ]
+    }
+  }
+}
