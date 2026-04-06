@@ -30,6 +30,14 @@
         </p>
         <p>可行动: {{ ally.是否可行动 ? '是' : '否' }}</p>
         <p>状态: {{ formatStatuses(ally) }}</p>
+        <h4>战斗属性</h4>
+        <ul class="info-list">
+          <li v-for="line in formatAttrs(ally)" :key="`ally-${line}`">{{ line }}</li>
+        </ul>
+        <h4>技能详情</h4>
+        <ul class="info-list">
+          <li v-for="line in formatSkillDetails(ally)" :key="`ally-skill-${line}`">{{ line }}</li>
+        </ul>
       </article>
       <article class="card" v-if="enemy">
         <h3>敌方: {{ enemy.名字 }}</h3>
@@ -41,6 +49,14 @@
         </p>
         <p>可行动: {{ enemy.是否可行动 ? '是' : '否' }}</p>
         <p>状态: {{ formatStatuses(enemy) }}</p>
+        <h4>战斗属性</h4>
+        <ul class="info-list">
+          <li v-for="line in formatAttrs(enemy)" :key="`enemy-${line}`">{{ line }}</li>
+        </ul>
+        <h4>技能详情</h4>
+        <ul class="info-list">
+          <li v-for="line in formatSkillDetails(enemy)" :key="`enemy-skill-${line}`">{{ line }}</li>
+        </ul>
       </article>
     </section>
 
@@ -123,6 +139,48 @@ function skillName(skillId: string): string {
 function formatStatuses(unit: { 状态列表: Array<{ 名称: string; 剩余回合: number; 层数: number }> }): string {
   if (!unit.状态列表.length) return '无';
   return unit.状态列表.map(status => `${status.名称}(${status.剩余回合}T/${status.层数}层)`).join(' | ');
+}
+
+function formatAttrs(unit: {
+  当前属性: {
+    力量: number;
+    魅力: number;
+    体质: number;
+    智力: number;
+    精神: number;
+    护甲等级: number;
+    物理防御: number;
+    精神防御: number;
+    命中加值: number;
+    闪避加值: number;
+    先攻: number;
+    异常抗性: number;
+    控制强度: number;
+    治疗强度: number;
+  };
+}): string[] {
+  const a = unit.当前属性;
+  return [
+    `力量 ${a.力量} | 魅力 ${a.魅力} | 体质 ${a.体质} | 智力 ${a.智力} | 精神 ${a.精神}`,
+    `护甲 ${a.护甲等级} | 物防 ${a.物理防御} | 精防 ${a.精神防御}`,
+    `命中 ${a.命中加值} | 闪避 ${a.闪避加值} | 先攻 ${a.先攻}`,
+    `异常抗性 ${a.异常抗性} | 控制强度 ${a.控制强度} | 治疗强度 ${a.治疗强度}`,
+  ];
+}
+
+function formatSkillDetails(unit: { 技能栏: Array<{ skillId: string; 当前冷却: number; 已禁用: boolean }> }): string[] {
+  if (!unit.技能栏.length) return ['无技能'];
+  return unit.技能栏.map(runtime => {
+    const def = data.value.技能定义表[runtime.skillId];
+    if (!def) return `${runtime.skillId} | 定义缺失`;
+    const check =
+      def.检定.类型 === 'attack_roll'
+        ? `攻击检定(${def.检定.攻击属性 ?? '-'} vs ${def.检定.对抗防御 ?? '-'})`
+        : def.检定.类型 === 'saving_throw'
+          ? `豁免检定(目标${def.检定.豁免属性 ?? '-'} vs DC ${def.检定.基础DC ?? '动态'})`
+          : '自动命中';
+    return `${def.名称} | CD ${runtime.当前冷却}${runtime.已禁用 ? ' [禁用]' : ''} | 消耗 MP ${def.消耗.MP}/HP ${def.消耗.HP} | ${check} | 描述: ${def.描述 || '无'}`;
+  });
 }
 
 function resetData() {
@@ -259,6 +317,22 @@ function settle() {
   border-radius: 8px;
   background: #fff;
   padding: 8px;
+}
+
+.card h4 {
+  margin: 8px 0 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.info-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.info-list li {
+  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 .line {
