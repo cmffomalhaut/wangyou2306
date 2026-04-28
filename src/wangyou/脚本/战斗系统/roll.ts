@@ -60,7 +60,7 @@ export function resolveAttackCheck(
   const roll = rollD20(modifier, { advantage: skill.检定.优势, disadvantage: skill.检定.劣势 });
   roll.actorId = actor.unitId;
   roll.targetId = target.unitId;
-  roll.targetAC = getDefenseValue(target, skill.检定.对抗防御);
+  roll.targetAC = getDefenseValue(target, skill.检定.对抗防御) + target.当前属性.闪避加值;
   roll.success = roll.isCriticalSuccess || (!roll.isCriticalFail && roll.finalRoll >= (roll.targetAC ?? 10));
   return roll;
 }

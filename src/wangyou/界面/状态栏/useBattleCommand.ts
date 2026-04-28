@@ -1,12 +1,12 @@
-import { computed, ref, watch, type ComputedRef, type Ref } from 'vue';
-import type { BattleState, InventoryItem, PendingCommand, SkillDefinition } from '@/wangyou/脚本/战斗系统/types';
+import { computed, ref, watch, type ComputedRef } from 'vue';
+import type { BattleState, BattleUnitState, InventoryItem, PendingCommand, SkillDefinition } from '@/wangyou/脚本/战斗系统/types';
 
 type Maybe<T> = T | null | undefined;
 
 type UseBattleCommandOptions = {
   battleState: ComputedRef<Maybe<BattleState>>;
-  allyUnit: ComputedRef<BattleState['参战方']['ally']['单位列表'][number] | null>;
-  equippedSkills: ComputedRef<SkillDefinition[]>;
+  activeAllyUnit: ComputedRef<BattleState['参战方']['ally']['单位列表'][number] | null>;
+  allAllySkills: ComputedRef<SkillDefinition[]>;
   availableItems: ComputedRef<InventoryItem[]>;
 };
 
@@ -17,7 +17,7 @@ export function useBattleCommand(options: UseBattleCommandOptions) {
 
   const selectedSkill = computed(() => {
     if (!selectedSkillId.value) return null;
-    return options.equippedSkills.value.find(skill => skill.id === selectedSkillId.value) ?? null;
+    return options.allAllySkills.value.find(skill => skill.id === selectedSkillId.value) ?? null;
   });
 
   const selectedItem = computed(() => {
@@ -45,13 +45,12 @@ export function useBattleCommand(options: UseBattleCommandOptions) {
   });
 
   watch(
-    options.equippedSkills,
+    options.allAllySkills,
     skills => {
       if (!skills.length) {
         selectedSkillId.value = null;
         return;
       }
-
       const currentExists = !!selectedSkillId.value && skills.some(skill => skill.id === selectedSkillId.value);
       if (!selectedSkillId.value || (!selectedItemId.value && !currentExists)) {
         selectedSkillId.value = skills[0].id;
@@ -72,7 +71,16 @@ export function useBattleCommand(options: UseBattleCommandOptions) {
   );
 
   watch(
-    [activeTargetType, options.allyUnit, options.battleState],
+    [() => options.activeAllyUnit.value?.unitId],
+    () => {
+      selectedSkillId.value = null;
+      selectedItemId.value = null;
+      selectedTargetId.value = null;
+    },
+  );
+
+  watch(
+    [activeTargetType, options.activeAllyUnit, options.battleState],
     ([targetType, actor, state]) => {
       if (!targetType || !actor || !state) {
         selectedTargetId.value = null;
@@ -85,23 +93,29 @@ export function useBattleCommand(options: UseBattleCommandOptions) {
           unit => unit.unitId === selectedTargetId.value && unit.是否存活,
         );
 
+      if (currentTargetExists && targetType !== 'self') {
+        return;
+      }
+
       if (targetType === 'self') {
         selectedTargetId.value = actor.unitId;
         return;
       }
 
       if (targetType === 'single_ally') {
-        const allyTargets = state.参战方[actor.阵营].单位列表.filter(unit => unit.是否存活);
-        if (!currentTargetExists || !allyTargets.some(unit => unit.unitId === selectedTargetId.value)) {
+        const allySide = actor.阵营 === 'ally' ? state.参战方.ally : state.参战方.enemy;
+        const allyTargets = allySide.单位列表.filter((unit: BattleUnitState) => unit.是否存活);
+        if (!allyTargets.some((unit: BattleUnitState) => unit.unitId === selectedTargetId.value)) {
           selectedTargetId.value = allyTargets[0]?.unitId ?? null;
         }
         return;
       }
 
       if (targetType === 'single_enemy') {
-        const targetSide = actor.阵营 === 'ally' ? 'enemy' : 'ally';
-        const enemyTargets = state.参战方[targetSide].单位列表.filter(unit => unit.是否存活);
-        if (!currentTargetExists || !enemyTargets.some(unit => unit.unitId === selectedTargetId.value)) {
+        const targetSideKey: 'ally' | 'enemy' = actor.阵营 === 'ally' ? 'enemy' : 'ally';
+        const enemySide = targetSideKey === 'ally' ? state.参战方.ally : state.参战方.enemy;
+        const enemyTargets = enemySide.单位列表.filter((unit: BattleUnitState) => unit.是否存活);
+        if (!enemyTargets.some((unit: BattleUnitState) => unit.unitId === selectedTargetId.value)) {
           selectedTargetId.value = enemyTargets[0]?.unitId ?? null;
         }
         return;
@@ -123,7 +137,7 @@ export function useBattleCommand(options: UseBattleCommandOptions) {
   }
 
   function buildPendingCommand(actionType: PendingCommand['actionType']): PendingCommand | null {
-    const actor = options.allyUnit.value;
+    const actor = options.activeAllyUnit.value;
     if (!actor) return null;
 
     if (actionType === 'defend' || actionType === 'escape') {

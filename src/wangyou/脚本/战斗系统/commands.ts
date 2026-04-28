@@ -115,6 +115,10 @@ function resolveTargets(
   targetType: SkillDefinition['目标类型'],
   targetIds?: string[],
 ): UnitLocator[] {
+  if (targetType === 'all_enemies' || targetType === 'all_allies' || targetType === 'self') {
+    return resolveTargetTypeTargets(state, actor, targetType);
+  }
+
   const normalizedTargetIds = normalizeTargetIds(targetIds);
   if (!normalizedTargetIds.length) {
     return resolveTargetTypeTargets(state, actor, targetType);
@@ -122,15 +126,12 @@ function resolveTargets(
 
   const targets = normalizedTargetIds
     .map(targetId => locateUnit(state, targetId))
-    .filter((item): item is UnitLocator => !!item);
-  if (!targets.length) return [];
-
-  if (targetType === 'all_enemies' || targetType === 'all_allies') {
-    return targets.every(target => isTargetLegal(actor, target, targetType)) ? targets : [];
-  }
+    .filter((item): item is UnitLocator => !!item)
+    .filter(item => isTargetLegal(actor, item, targetType));
+  if (!targets.length) return resolveTargetTypeTargets(state, actor, targetType);
 
   if (targets.length !== 1) return [];
-  return isTargetLegal(actor, targets[0], targetType) ? targets : [];
+  return [targets[0]];
 }
 
 function validatePhase(state: BattleState): boolean {
@@ -219,11 +220,17 @@ export function validatePendingCommand(
   if (runtimeSkill.当前冷却 > 0 || runtimeSkill.已禁用) {
     return { ok: false, reason: `${skill.名称} 目前无法使用。` };
   }
+  const isSilenced = actor.unit.状态列表.some(s => s.statusId === 'silence' && s.剩余回合 > 0);
+  if (isSilenced && skill.消耗.MP > 0) {
+    return { ok: false, reason: `${actor.unit.名字} 处于沉默状态，无法使用消耗法力的技能。` };
+  }
   if (actor.unit.当前资源.MP < skill.消耗.MP || actor.unit.当前资源.HP <= skill.消耗.HP) {
     return { ok: false, reason: `${actor.unit.名字} 的资源不足，无法施放 ${skill.名称}。` };
   }
 
-  const targets = resolveTargets(state, actor, skill.目标类型, command.targetIds);
+  const taunt = actor.unit.状态列表.find(s => s.statusId === 'taunt' && s.剩余回合 > 0);
+  const effectiveTargetIds = taunt?.来源单位Id ? [taunt.来源单位Id] : command.targetIds;
+  const targets = resolveTargets(state, actor, skill.目标类型, effectiveTargetIds);
   if (!targets.length) {
     return { ok: false, reason: `${skill.名称} 没有合法目标。` };
   }

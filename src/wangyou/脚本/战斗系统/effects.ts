@@ -172,21 +172,26 @@ type CreateLog = (
   extra?: Partial<BattleLogEntry>,
 ) => BattleLogEntry;
 
-type ApplySkillEffectsArgs = {
+
+export type EffectListArgs = {
   state: BattleState;
   actor: BattleUnitState;
   target: BattleUnitState;
-  skill: SkillDefinition;
+  effects: SkillDefinition['效果列表'];
+  skillId?: string;
   rules: RuleConfig;
   createLog: CreateLog;
+  halfDamage?: boolean;
 };
 
-export function applySkillEffects({ state, actor, target, skill, rules, createLog }: ApplySkillEffectsArgs): BattleLogEntry[] {
+export function applyEffectList({ state, actor, target, effects, skillId, rules, createLog, halfDamage }: EffectListArgs): BattleLogEntry[] {
   const logs: BattleLogEntry[] = [];
 
-  skill.效果列表.forEach(effect => {
+  effects.forEach(effect => {
+    if (halfDamage && effect.kind !== 'damage') return;
     if (effect.kind === 'damage') {
-      const damage = calcDamage(actor, target, effect, rules);
+      let damage = calcDamage(actor, target, effect, rules);
+      if (halfDamage) damage = Math.max(1, Math.floor(damage / 2));
       const shieldDamage = Math.min(target.当前资源.Shield, damage);
       target.当前资源.Shield -= shieldDamage;
       const hpDamage = Math.min(target.当前资源.HP, damage - shieldDamage);
@@ -195,7 +200,7 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
         createLog(state, 'damage', `${target.名字} 受到 ${damage} 点伤害。`, {
           actorId: actor.unitId,
           targetId: target.unitId,
-          skillId: skill.id,
+          skillId: skillId,
         }),
       );
     }
@@ -205,7 +210,7 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
         createLog(state, 'heal', `${target.名字} 恢复了 ${heal} 点生命。`, {
           actorId: actor.unitId,
           targetId: target.unitId,
-          skillId: skill.id,
+          skillId: skillId,
         }),
       );
     }
@@ -213,13 +218,16 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
       const before = target.当前资源.MP;
       const amount = Math.max(1, Math.floor(effect.flat + (effect.ratio ?? 0) * actor.当前属性.智力));
       target.当前资源.MP = clamp(target.当前资源.MP + amount, 0, target.当前资源.MPMax);
-      logs.push(
-        createLog(state, 'resource', `${target.名字} 恢复了 ${target.当前资源.MP - before} 点法力。`, {
-          actorId: actor.unitId,
-          targetId: target.unitId,
-          skillId: skill.id,
-        }),
-      );
+      const delta = target.当前资源.MP - before;
+      if (delta > 0) {
+        logs.push(
+          createLog(state, 'resource', `${target.名字} 恢复了 ${delta} 点法力。`, {
+            actorId: actor.unitId,
+            targetId: target.unitId,
+            skillId: skillId,
+          }),
+        );
+      }
     }
     if (effect.kind === 'shield') {
       const amount = Math.max(1, Math.floor(actor.当前属性[effect.scale] * effect.ratio + effect.flat));
@@ -228,20 +236,21 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
         createLog(state, 'resource', `${target.名字} 获得了 ${amount} 点护盾。`, {
           actorId: actor.unitId,
           targetId: target.unitId,
-          skillId: skill.id,
+          skillId: skillId,
         }),
       );
     }
     if (effect.kind === 'apply_status') {
       const luckShift = Math.max(-0.15, Math.min(0.15, (actor.当前属性.幸运 - target.当前属性.幸运) * 0.01));
-      const finalChance = _.clamp(effect.chance + luckShift, 0, 1);
+      const controlShift = actor.当前属性.控制强度 * 0.01 - target.当前属性.异常抗性 * 0.01;
+      const finalChance = _.clamp(effect.chance + luckShift + controlShift, 0, 1);
       if (Math.random() <= finalChance) {
         const status = applyStatus(target, effect.statusId, effect.duration, actor.unitId, effect.power);
         logs.push(
           createLog(state, 'status_apply', `${target.名字} 附加了 ${status.名称}。`, {
             actorId: actor.unitId,
             targetId: target.unitId,
-            skillId: skill.id,
+            skillId: skillId,
             payload: { statusMeta: { statusId: effect.statusId, duration: effect.duration, chance: finalChance, applied: true } },
           }),
         );
@@ -250,7 +259,7 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
           createLog(state, 'status_apply', `${target.名字} 抵抗了 ${effect.statusId}。`, {
             actorId: actor.unitId,
             targetId: target.unitId,
-            skillId: skill.id,
+            skillId: skillId,
             payload: { statusMeta: { statusId: effect.statusId, duration: effect.duration, chance: finalChance, applied: false } },
           }),
         );
@@ -265,7 +274,7 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
         createLog(state, 'status_remove', `${target.名字} 的异常状态被净化。`, {
           actorId: actor.unitId,
           targetId: target.unitId,
-          skillId: skill.id,
+          skillId: skillId,
         }),
       );
     }
@@ -275,7 +284,7 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
         createLog(state, 'modifier_apply', `${target.名字} 获得修正 ${modifier.modifierId}。`, {
           actorId: actor.unitId,
           targetId: target.unitId,
-          skillId: skill.id,
+          skillId: skillId,
         }),
       );
     }
@@ -285,7 +294,18 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
         createLog(state, 'status_apply', `${target.名字} 被嘲讽。`, {
           actorId: actor.unitId,
           targetId: target.unitId,
-          skillId: skill.id,
+          skillId: skillId,
+        }),
+      );
+    }
+    if (effect.kind === 'modify_counter') {
+      target.行动计数器 = Math.max(1, target.行动计数器 + effect.flat);
+      const dir = effect.flat < 0 ? '加速' : '减速';
+      logs.push(
+        createLog(state, 'system', `${target.名字} 的行动计数器${dir}了 ${Math.abs(effect.flat)}。`, {
+          actorId: actor.unitId,
+          targetId: target.unitId,
+          skillId: skillId,
         }),
       );
     }
@@ -293,4 +313,18 @@ export function applySkillEffects({ state, actor, target, skill, rules, createLo
   });
 
   return logs;
+}
+
+type ApplySkillEffectsArgs = {
+  state: BattleState;
+  actor: BattleUnitState;
+  target: BattleUnitState;
+  skill: SkillDefinition;
+  rules: RuleConfig;
+  createLog: CreateLog;
+  halfDamage?: boolean;
+};
+
+export function applySkillEffects({ state, actor, target, skill, rules, createLog, halfDamage }: ApplySkillEffectsArgs): BattleLogEntry[] {
+  return applyEffectList({ state, actor, target, effects: skill.效果列表, skillId: skill.id, rules, createLog, halfDamage });
 }

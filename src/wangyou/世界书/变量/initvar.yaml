@@ -149,6 +149,61 @@
     AI约束:
       使用倾向: support
       推荐时机: 己方生命低于一半时
+  blizzard:
+    id: blizzard
+    名称: 暴风雪
+    类型: 主动
+    标签: [magic, aoe]
+    描述: 召唤暴风雪席卷全体敌人，造成冰霜伤害并有概率冻结。
+    目标类型: all_enemies
+    射程: global
+    消耗:
+      MP: 14
+      HP: 0
+      冷却回合: 3
+      行动点: 1
+    检定:
+      类型: saving_throw
+      豁免属性: 敏捷
+      基础DC: 12
+    效果列表:
+      - kind: damage
+        scale: 智力
+        ratio: 1.2
+        flat: 10
+        damageType: ice
+      - kind: apply_status
+        statusId: freeze
+        chance: 0.35
+        duration: 1
+        power: 0
+    AI约束:
+      使用倾向: control
+      推荐时机: 敌方多人时优先
+  aegis_wall:
+    id: aegis_wall
+    名称: 神盾壁垒
+    类型: 主动
+    标签: [buff, support]
+    描述: 为全体我方单位施加护盾。
+    目标类型: all_allies
+    射程: global
+    消耗:
+      MP: 12
+      HP: 0
+      冷却回合: 3
+      行动点: 1
+    检定:
+      类型: auto_hit
+    效果列表:
+      - kind: shield
+        scale: 感知
+        ratio: 1.0
+        flat: 15
+        duration: 2
+    AI约束:
+      使用倾向: survive
+      推荐时机: 己方受到大量伤害时
   goblin_stab:
     id: goblin_stab
     名称: 肮脏刺击
@@ -191,6 +246,17 @@
     效果列表:
       - kind: restore_mp
         flat: 2
+  iron_will:
+    id: iron_will
+    名称: 钢铁意志
+    描述: 回合开始时获得少量护盾。
+    触发时机: turn_start
+    条件: []
+    效果列表:
+      - kind: shield
+        scale: 体质
+        ratio: 0.3
+        flat: 3
 背包:
   potion_small:
     id: potion_small
@@ -276,12 +342,91 @@
         已装备: true
         已解锁: true
         来源: 初始
+      - slotId: s5
+        skillId: blizzard
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s6
+        skillId: aegis_wall
+        已装备: true
+        已解锁: true
+        来源: 初始
     被动表:
       - slotId: p1
         passiveId: battle_focus
         已解锁: true
         来源: 天赋
     可用道具栏: [potion_small, ether_small]
+  paladin:
+    id: paladin
+    名字: 莱昂
+    阵营: ally
+    简介: 圣骑士，擅长防护与群体支援。
+    标签: [盟友, 圣骑士]
+    等级: 3
+    经验值:
+      当前值: 0
+      升级所需值: 100
+    成长:
+      未分配属性点: 0
+    七维:
+      力量: 9
+      敏捷: 6
+      体质: 10
+      智力: 7
+      感知: 10
+      魅力: 8
+      幸运: 5
+    资源:
+      生命值:
+        当前值: 108
+        最大值: 108
+      法力值:
+        当前值: 32
+        最大值: 32
+    派生基线:
+      护甲等级: 14
+      控制强度: 1
+      异常抗性: 2
+    战斗定位:
+      职业: 圣骑士
+      流派: 防护支援
+      伤害偏向: physical
+    抗性:
+      伤害抗性: {}
+      状态抗性: {}
+    装备栏:
+      武器: 圣光战锤
+      防具: 板甲
+      饰品: [圣徽]
+    技能表:
+      - slotId: s1
+        skillId: basic_attack
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s2
+        skillId: holy_light
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s3
+        skillId: aegis_wall
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s4
+        skillId: guard_stance
+        已装备: true
+        已解锁: true
+        来源: 初始
+    被动表:
+      - slotId: p1
+        passiveId: iron_will
+        已解锁: true
+        来源: 天赋
+    可用道具栏: [potion_small]
   goblin_scout:
     id: goblin_scout
     名字: 哥布林斥候
@@ -328,6 +473,111 @@
     技能表:
       - slotId: s1
         skillId: goblin_stab
+        已装备: true
+        已解锁: true
+        来源: 初始
+      - slotId: s2
+        skillId: basic_attack
+        已装备: true
+        已解锁: true
+        来源: 初始
+    被动表: []
+    可用道具栏: []
+  goblin_warrior:
+    id: goblin_warrior
+    名字: 哥布林战士
+    阵营: enemy
+    简介: 装备稍好的哥布林，更为凶猛。
+    标签: [敌人, 哥布林]
+    等级: 2
+    经验值:
+      当前值: 0
+      升级所需值: 100
+    成长:
+      未分配属性点: 0
+    七维:
+      力量: 8
+      敏捷: 6
+      体质: 7
+      智力: 4
+      感知: 5
+      魅力: 4
+      幸运: 4
+    资源:
+      生命值:
+        当前值: 84
+        最大值: 84
+      法力值:
+        当前值: 0
+        最大值: 0
+    派生基线:
+      护甲等级: 11
+      控制强度: 0
+      异常抗性: 0
+    战斗定位:
+      职业: 战士
+      流派: 近战强攻
+      伤害偏向: physical
+    抗性:
+      伤害抗性: {}
+      状态抗性: {}
+    装备栏:
+      武器: 破旧战斧
+      防具: 皮甲碎片
+      饰品: []
+    技能表:
+      - slotId: s1
+        skillId: basic_attack
+        已装备: true
+        已解锁: true
+        来源: 初始
+    被动表: []
+    可用道具栏: []
+  goblin_shaman:
+    id: goblin_shaman
+    名字: 哥布林萨满
+    阵营: enemy
+    简介: 会施法的哥布林，能用火焰攻击敌人。
+    标签: [敌人, 哥布林]
+    等级: 3
+    经验值:
+      当前值: 0
+      升级所需值: 100
+    成长:
+      未分配属性点: 0
+    七维:
+      力量: 4
+      敏捷: 6
+      体质: 5
+      智力: 8
+      感知: 7
+      魅力: 5
+      幸运: 6
+    资源:
+      生命值:
+        当前值: 60
+        最大值: 60
+      法力值:
+        当前值: 20
+        最大值: 20
+    派生基线:
+      护甲等级: 9
+      控制强度: 1
+      异常抗性: 0
+    战斗定位:
+      职业: 萨满
+      流派: 法术输出
+      伤害偏向: magic
+    抗性:
+      伤害抗性: {}
+      状态抗性: {}
+    装备栏:
+      武器: 骨制法杖
+      防具: 兽皮袍
+      饰品: []
+    技能表:
+      - slotId: s1
+        skillId: fire_bolt
         已装备: true
         已解锁: true
         来源: 初始

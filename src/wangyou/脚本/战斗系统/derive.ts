@@ -66,7 +66,7 @@ export function deriveUnitAttributes(record: CharacterRecord): BattleUnitState['
     精神防御: 10 + 感知 + Math.floor(record.等级 / 2),
     命中加值: Math.floor(敏捷 / 3),
     闪避加值: Math.floor(敏捷 / 3),
-    先攻: 敏捷,
+    先攻: 敏捷 + Math.floor(幸运 / 3),
     生命层次: lifeTier,
     异常抗性: record.派生基线.异常抗性,
     控制强度: record.派生基线.控制强度,
@@ -94,5 +94,6 @@ export function deriveUnit(record: CharacterRecord, side: SideKey): BattleUnitSt
       已用反应: false,
       本回合已行动: false,
     },
+    行动计数器: 1000,
   };
 }

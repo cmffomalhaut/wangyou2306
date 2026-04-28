@@ -13,7 +13,7 @@ import type {
 import { generateEnemyCommand } from './ai';
 import { validatePendingCommand, type ValidatedCommandContext } from './commands';
 import { deriveUnit } from './derive';
-import { applyModifierStats, applySkillEffects, refreshUnitAvailability } from './effects';
+import { applyEffectList, applyModifierStats, applySkillEffects, refreshUnitAvailability } from './effects';
 import { resolveAttackCheck, resolveEscapeAction, resolveSavingThrow } from './roll';
 import { applyBattleSummaryToRecords as applySettlementToRecords, buildSummary } from './settlement';
 
@@ -58,8 +58,15 @@ function buildActionBlockedReason(
 function buildInitiativeQueue(state: BattleState): string[] {
   return [...state.参战方.ally.单位列表, ...state.参战方.enemy.单位列表]
     .filter(unit => unit.是否存活)
-    .sort((a, b) => b.当前属性.先攻 - a.当前属性.先攻)
+    .sort((a, b) => a.行动计数器 - b.行动计数器)
     .map(unit => unit.unitId);
+}
+
+function getNextActorByCTB(state: BattleState): UnitLocator | null {
+  const all = [...state.参战方.ally.单位列表, ...state.参战方.enemy.单位列表].filter(u => u.是否存活);
+  if (!all.length) return null;
+  const next = all.reduce((a, b) => (a.行动计数器 <= b.行动计数器 ? a : b));
+  return locateUnit(state, next.unitId);
 }
 
 function locateUnit(state: BattleState, unitId?: string): UnitLocator | null {
@@ -143,20 +150,18 @@ function runPassiveTrigger(
   const logs: BattleLogEntry[] = [];
   const passives = getPassiveDefinitions(data, unit).filter(passive => passive.触发时机 === trigger);
   passives.forEach(passive => {
-    passive.效果列表.forEach(effect => {
-      if (effect.kind === 'restore_mp') {
-        const before = unit.当前资源.MP;
-        unit.当前资源.MP = clamp(unit.当前资源.MP + effect.flat, 0, unit.当前资源.MPMax);
-        const delta = unit.当前资源.MP - before;
-        if (delta > 0) {
-          logs.push(
-            createLog(state, 'resource', `${unit.名字} 的被动 ${passive.名称} 恢复了 ${delta} 点法力。`, {
-              actorId: unit.unitId,
-            }),
-          );
-        }
-      }
-    });
+    if (!passive.效果列表.length) return;
+    logs.push(
+      ...applyEffectList({
+        state,
+        actor: unit,
+        target: unit,
+        effects: passive.效果列表,
+        skillId: passive.id,
+        rules: data.规则配置,
+        createLog,
+      }),
+    );
   });
   return logs;
 }
@@ -167,7 +172,9 @@ function tickStatus(state: BattleState, unit: BattleUnitState): BattleLogEntry[]
     if (!unit.是否存活) return;
     if (['burn', 'poison', 'bleed'].includes(status.statusId)) {
       const amount = Math.max(1, Math.floor(status.强度 ?? 4));
-      const damage = Math.min(amount, unit.当前资源.HP);
+      const shieldDamage = Math.min(unit.当前资源.Shield, amount);
+      unit.当前资源.Shield -= shieldDamage;
+      const damage = Math.min(amount - shieldDamage, unit.当前资源.HP);
       unit.当前资源.HP -= damage;
       logs.push(
         createLog(state, 'damage', `${unit.名字} 受到 ${status.名称} 伤害 ${damage} 点。`, {
@@ -228,8 +235,9 @@ function endBattle(
 }
 
 function prepareTurnStart(data: StatData, state: BattleState, logs: BattleLogEntry[]): void {
-  const actorId = nextLivingUnitId(state, state.行动游标) ?? buildInitiativeQueue(state)[0];
-  state.当前行动单位Id = actorId;
+  const actorLocator = getNextActorByCTB(state);
+  if (!actorLocator) return;
+  state.当前行动单位Id = actorLocator.unit.unitId;
   state.当前阶段 = 'select_action';
   const actor = getCurrentActor(state);
   if (!actor) return;
@@ -243,17 +251,18 @@ function prepareTurnStart(data: StatData, state: BattleState, logs: BattleLogEnt
 }
 
 function finishRound(data: StatData, state: BattleState, logs: BattleLogEntry[]): void {
-  const nextCursor = state.行动游标 + 1;
-  const wrapped = nextCursor >= state.先攻队列.length;
-
-  state.行动游标 = wrapped ? 0 : nextCursor;
-  if (wrapped) {
-    state.当前阶段 = 'turn_end';
+  const actor = getCurrentActor(state);
+  if (actor) {
+    const all = [...state.参战方.ally.单位列表, ...state.参战方.enemy.单位列表].filter(u => u.是否存活);
+    const minCounter = all.reduce((min, u) => Math.min(min, u.行动计数器), Infinity);
+    const resetValue = Math.max(10, 100 - actor.unit.当前属性.先攻 * 3);
+    actor.unit.行动计数器 = minCounter + resetValue;
+    logs.push(...runPassiveTrigger(data, state, actor.unit, 'turn_end'));
     logs.push(...finishTurn(data, state));
-    state.回合数 += 1;
-    state.先攻队列 = buildInitiativeQueue(state);
   }
 
+  state.回合数 += 1;
+  state.先攻队列 = buildInitiativeQueue(state);
   state.当前阶段 = 'turn_start';
   state.待处理指令 = undefined;
   rebuildActionState(state);
@@ -379,7 +388,8 @@ function resolveSkillAction(
         ),
       );
     }
-    if (!checkPassed) {
+    const savedSuccessfully = skill.检定.类型 === 'saving_throw' && roll?.success;
+    if (!checkPassed && !savedSuccessfully) {
       logs.push(
         createLog(state, 'system', `${skill.名称} 对 ${target.unit.名字} 未能生效。`, {
           actorId: actor.unit.unitId,
@@ -390,6 +400,16 @@ function resolveSkillAction(
       return;
     }
 
+    if (savedSuccessfully) {
+      logs.push(
+        createLog(state, 'system', `${target.unit.名字} 豁免成功，受到半数伤害。`, {
+          actorId: actor.unit.unitId,
+          targetId: target.unit.unitId,
+          skillId: skill.id,
+        }),
+      );
+    }
+
     logs.push(
       ...applySkillEffects({
         state,
@@ -398,6 +418,7 @@ function resolveSkillAction(
         skill,
         rules: data.规则配置,
         createLog,
+        halfDamage: savedSuccessfully,
       }),
     );
   });
@@ -427,8 +448,8 @@ function finishTurn(data: StatData, state: BattleState): BattleLogEntry[] {
 
 export function initializeBattleState(data: StatData): BattleState {
   const recordList = Object.values(data.角色档案);
-  const allyRecords = recordList.filter(record => ['player', 'ally'].includes(record.阵营)).slice(0, 1);
-  const enemyRecords = recordList.filter(record => record.阵营 === 'enemy').slice(0, 1);
+  const allyRecords = recordList.filter(record => ['player', 'ally'].includes(record.阵营));
+  const enemyRecords = recordList.filter(record => record.阵营 === 'enemy');
 
   const state: BattleState = {
     battleId: data.战斗状态?.battleId ?? nowId('battle'),
@@ -458,6 +479,12 @@ export function initializeBattleState(data: StatData): BattleState {
     待处理指令: undefined,
     结算结果: undefined,
   };
+
+  // CTB 初始计数器加随机偏移，避免先攻最高者永远先手
+  [...state.参战方.ally.单位列表, ...state.参战方.enemy.单位列表].forEach(unit => {
+    const base = Math.max(10, 100 - unit.当前属性.先攻 * 3);
+    unit.行动计数器 = base + _.random(0, Math.floor(base * 0.5));
+  });
 
   state.先攻队列 = buildInitiativeQueue(state);
   state.当前行动单位Id = state.先攻队列[0];
@@ -500,6 +527,16 @@ export function advanceBattle(data: StatData, inputCommand?: PendingCommand): En
 
   if (state.当前阶段 === 'turn_start') {
     prepareTurnStart(data, state, logs);
+    // 敌方回合：prepareTurnStart 已设置待处理指令，直接继续执行，不需要额外一次 tick
+    const earlyActor = getCurrentActor(state);
+    if (!earlyActor) {
+      endBattle(data, state, logs, 'draw');
+      return { state, logs, rolls };
+    }
+    if (earlyActor.side === 'ally') {
+      state.日志.push(...logs);
+      return { state, logs, rolls };
+    }
   }
 
   const actor = getCurrentActor(state);

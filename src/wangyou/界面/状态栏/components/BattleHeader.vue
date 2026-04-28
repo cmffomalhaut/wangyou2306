@@ -1,35 +1,32 @@
 <template>
-  <section class="battle-header subpanel">
-    <div class="battle-header-main">
+  <section class="battle-header">
+    <div class="battle-header-top">
       <div>
-        <div class="panel-title">战斗概览</div>
+        <div class="section-label">战斗状态</div>
         <div class="battle-header-round">{{ roundText }}</div>
+        <div class="battle-header-phase">{{ phaseText }}</div>
       </div>
-      <div class="turn-state-pill" :class="turnStateClass">{{ turnStateText }}</div>
+      <div class="turn-state-pill" :class="turnStateClass">
+        <span class="turn-state-icon">{{ turnStateIcon }}</span>
+        {{ turnStateText }}
+      </div>
     </div>
 
-    <div class="battle-header-grid">
-      <div class="header-metric-card">
-        <div class="header-metric-label">当前阶段</div>
-        <div class="header-metric-value">{{ phaseText }}</div>
+    <div class="battle-header-info">
+      <div class="info-card">
+        <div class="info-label">当前行动</div>
+        <div class="info-value">{{ actorName }}</div>
+        <div class="info-meta">{{ actorSideText }}</div>
       </div>
-
-      <div class="header-metric-card">
-        <div class="header-metric-label">当前行动单位</div>
-        <div class="header-metric-value">{{ actorName }}</div>
-        <div class="header-metric-meta">{{ actorSideText }}</div>
+      <div class="info-card">
+        <div class="info-label">操作状态</div>
+        <div class="info-value">{{ actionStateText }}</div>
+        <div class="info-meta">{{ actionHintText }}</div>
       </div>
-
-      <div class="header-metric-card">
-        <div class="header-metric-label">操作状态</div>
-        <div class="header-metric-value">{{ actionStateText }}</div>
-        <div class="header-metric-meta">{{ actionHintText }}</div>
-      </div>
-
-      <div class="header-metric-card emphasis">
-        <div class="header-metric-label">当前选择</div>
-        <div class="header-metric-value">{{ selectionText }}</div>
-        <div class="header-metric-meta">{{ selectionMetaText }}</div>
+      <div class="info-card emphasis">
+        <div class="info-label">当前选择</div>
+        <div class="info-value">{{ selectionText }}</div>
+        <div class="info-meta">{{ selectionMetaText }}</div>
       </div>
     </div>
   </section>
@@ -84,6 +81,12 @@ const turnStateText = computed(() => {
   return props.battleState.玩家输入态.可操作 ? '玩家回合' : '系统推进中';
 });
 
+const turnStateIcon = computed(() => {
+  if (!props.battleState) return '◇';
+  if (props.battleState.状态 === 'ended') return '◆';
+  return props.battleState.玩家输入态.可操作 ? '◈' : '◇';
+});
+
 const turnStateClass = computed(() => {
   if (!props.battleState) return 'idle';
   if (props.battleState.状态 === 'ended') return 'ended';
@@ -97,7 +100,7 @@ const actionStateText = computed(() => {
 });
 
 const actionHintText = computed(() => {
-  if (!props.battleState) return '点击开始/初始化进入战斗';
+  if (!props.battleState) return '点击「开始战斗」进入战斗';
   if (props.battleState.状态 === 'ended') return '可在下方执行战后结算';
   return props.battleState.玩家输入态.可操作 ? '请选择技能或指令后提交' : '等待敌方或系统流程完成';
 });

@@ -64,10 +64,10 @@ function scoreSkill(
   let score = 10;
 
   if (skill.消耗.MP > 0) {
-    score -= skill.消耗.MP * 0.5;
+    score -= skill.消耗.MP * 0.2;
   }
   if (skill.消耗.冷却回合 > 0) {
-    score += 2;
+    score += skill.消耗.冷却回合 * 3;
   }
 
   switch (skill.AI约束.使用倾向) {
@@ -116,11 +116,13 @@ function chooseSingleEnemyTarget(
     return sorted.find(unit => !hasControlStatus(unit)) ?? sorted[0];
   }
 
-  if (skill.AI约束.使用倾向 === 'burst' || skill.AI约束.使用倾向 === 'attack') {
+  if (skill.AI约束.使用倾向 === 'burst') {
     return sorted[0];
   }
 
-  return actorSide === 'enemy' ? sorted[0] : sorted[sorted.length - 1];
+  // attack/default: 70%概率打血量最低，30%随机，避免永远集火同一目标
+  if (Math.random() < 0.7) return sorted[0];
+  return sorted[_.random(0, sorted.length - 1)];
 }
 
 function chooseSingleAllyTarget(
@@ -173,6 +175,21 @@ function buildTargetIds(skill: SkillDefinition, actor: UnitLocator, state: Battl
 export function generateEnemyCommand(data: StatData, state: BattleState, actor: UnitLocator): PendingCommand {
   const allies = locateUnitsBySide(state, actor.side);
   const enemies = locateUnitsBySide(state, getOppositeSide(actor.side));
+
+  // fear: 30%概率跳过行动
+  const hasFear = actor.unit.状态列表.some(s => s.statusId === 'fear' && s.剩余回合 > 0);
+  if (hasFear && Math.random() < 0.3) {
+    return { actorId: actor.unit.unitId, actionType: 'defend', clientHint: { source: 'enemy_ai' } };
+  }
+
+  // taunt: 强制攻击嘲讽来源
+  const taunt = actor.unit.状态列表.find(s => s.statusId === 'taunt' && s.剩余回合 > 0);
+
+  // confuse: 50%概率攻击己方
+  const hasConfuse = actor.unit.状态列表.some(s => s.statusId === 'confuse' && s.剩余回合 > 0);
+  // charm: 强制攻击己方血量最高
+  const hasCharm = actor.unit.状态列表.some(s => s.statusId === 'charm' && s.剩余回合 > 0);
+
   const usableSkills = getUsableSkills(data, actor.unit);
 
   if (!enemies.length) {
@@ -198,11 +215,22 @@ export function generateEnemyCommand(data: StatData, state: BattleState, actor: 
     };
   }
 
+  let overrideTargetIds: string[] | undefined;
+  if (taunt?.来源单位Id) {
+    overrideTargetIds = [taunt.来源单位Id];
+  } else if (hasCharm) {
+    const target = [...allies].sort((a, b) => getHpRatio(b) - getHpRatio(a))[0];
+    if (target) overrideTargetIds = [target.unitId];
+  } else if (hasConfuse && Math.random() < 0.5) {
+    const target = allies[_.random(0, allies.length - 1)];
+    if (target) overrideTargetIds = [target.unitId];
+  }
+
   return {
     actorId: actor.unit.unitId,
     actionType: 'skill',
     skillId: pickedSkill.id,
-    targetIds: buildTargetIds(pickedSkill, actor, state),
+    targetIds: overrideTargetIds ?? buildTargetIds(pickedSkill, actor, state),
     clientHint: { source: 'enemy_ai' },
   };
 }
