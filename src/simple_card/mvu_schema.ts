@@ -121,7 +121,7 @@ const 战斗归档条目 = z.object({
 //  顶层 Schema
 // ═══════════════════════════════════════════
 
-const Schema = z
+export const Schema = z
   .object({
     世界: 世界,
 

@@ -19,6 +19,7 @@ import { advanceBattle, applyBattleSummaryToRecords } from '../wangyou/脚本/�
 import type { StatData as FullStatData, PendingCommand, BattleState, CharacterRecord } from '../wangyou/脚本/战斗系统/types';
 import type { MonsterTemplate } from '../wangyou/脚本/战斗系统/monsters';
 import type { SimpleStatData } from './battle_adapter';
+import { Schema } from './mvu_schema';
 
 const AUTO_ADVANCE_LIMIT = 24;
 const MESSAGE_ID = -1;
@@ -29,7 +30,8 @@ const MESSAGE_ID = -1;
 
 function readSimpleData(): SimpleStatData {
   const variables = Mvu.getMvuData({ type: 'message', message_id: MESSAGE_ID });
-  return (_.get(variables, 'stat_data', {}) ?? {}) as SimpleStatData;
+  const raw = (_.get(variables, 'stat_data', {}) ?? {});
+  return Schema.parse(raw) as SimpleStatData;
 }
 
 async function writeData(data: Record<string, unknown>): Promise<void> {
