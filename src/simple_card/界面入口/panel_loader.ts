@@ -7,7 +7,7 @@
 
 // CDN 上的 Vue UI 构建产物（viteSingleFile 打包为单 HTML）
 const UI_HTML_URL =
-  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@main/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.html';
+  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@13be318/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.html';
 
 let injectDone = false;
 
