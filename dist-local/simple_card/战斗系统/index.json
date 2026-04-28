@@ -3,7 +3,7 @@
   "enabled": true,
   "name": "简单卡-战斗系统",
   "id": "simple-card-battle-engine",
-  "content": "import 'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@6eb6733/dist-local/simple_card/%E6%88%98%E6%96%97%E7%B3%BB%E7%BB%9F/index.js';",
+  "content": "import 'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@c202920/dist-local/simple_card/%E6%88%98%E6%96%97%E7%B3%BB%E7%BB%9F/index.js';",
   "info": "DnD 战斗引擎入口：遇敌检测、怪物加载、回合制战斗推进、战后结算回写 MVU。",
   "button": {
     "enabled": true,
