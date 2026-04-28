@@ -1,8 +1,14 @@
 <template>
-  <section class="log-panel subpanel">
-    <div class="panel-title">战斗日志</div>
+  <section class="log-panel">
+    <div class="log-title">战斗日志</div>
+    <div class="diamond-divider">✦</div>
     <div class="log-list">
-      <div v-for="entry in logs" :key="entry.id" class="log-item" :class="entry.type">
+      <div
+        v-for="entry in logs"
+        :key="entry.id"
+        class="log-item"
+        :class="entry.type"
+      >
         <span class="log-turn">T{{ entry.turn }}</span>
         <span>{{ entry.text }}</span>
       </div>

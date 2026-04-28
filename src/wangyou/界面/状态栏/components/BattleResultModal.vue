@@ -1,33 +1,38 @@
 <template>
   <section v-if="result" class="result-card">
-    <div class="result-topline">
-      <div>
-        <div class="panel-title">战斗结果</div>
-        <div class="result-summary">{{ result.summary }}</div>
-      </div>
+    <div class="result-top-section">
+      <div class="result-title">战斗结算</div>
+      <div class="result-summary">{{ result.summary }}</div>
       <div class="result-winner-pill" :class="result.winner">{{ winnerText }}</div>
     </div>
 
-    <div class="result-grid">
-      <div>
-        <div class="result-value">{{ result.rounds }}</div>
-        <div class="panel-phase">{{ result.rounds }} 回合结束</div>
+    <div class="diamond-divider">✦</div>
+
+    <div class="result-stats-grid">
+      <div class="result-stat-card">
+        <div class="result-stat-label">回合</div>
+        <div class="result-stat-value">{{ result.rounds }}</div>
       </div>
-      <div>
-        <div class="result-label">经验</div>
-        <div class="result-value">{{ result.expGain }}</div>
+      <div class="result-stat-card">
+        <div class="result-stat-label">经验</div>
+        <div class="result-stat-value">{{ result.expGain }}</div>
       </div>
-      <div>
-        <div class="result-label">金币</div>
-        <div class="result-value">{{ result.goldGain }}</div>
+      <div class="result-stat-card">
+        <div class="result-stat-label">金币</div>
+        <div class="result-stat-value">{{ result.goldGain }}</div>
       </div>
     </div>
 
-    <div v-if="result.rewardTexts.length" class="result-reward-list">
-      <div v-for="reward in result.rewardTexts" :key="reward" class="result-reward-item">{{ reward }}</div>
+    <div v-if="result.rewardTexts.length" class="result-rewards">
+      <div class="result-rewards-title">战利品</div>
+      <div class="result-reward-list">
+        <div v-for="reward in result.rewardTexts" :key="reward" class="result-reward-item">{{ reward }}</div>
+      </div>
     </div>
 
-    <button class="action-btn" @click="$emit('settle')">执行战后结算</button>
+    <div class="result-actions">
+      <button class="action-btn" @click="$emit('settle')">执行战后结算</button>
+    </div>
   </section>
 </template>
 

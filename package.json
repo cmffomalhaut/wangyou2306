@@ -2,6 +2,17 @@
   "name": "tavern-helper-template-main",
   "private": true,
   "scripts": {
-    "validate:wangyou": "tsc -p tsconfig.wangyou.validate.json --noEmit"
+    "validate:wangyou": "tsc -p tsconfig.wangyou.validate.json --noEmit",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "@rollup/plugin-yaml": "^4.1.2",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "lodash": "^4.18.1",
+    "vue": "^3.5.33"
   }
 }

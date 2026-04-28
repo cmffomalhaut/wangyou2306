@@ -132,9 +132,8 @@ const EffectBlockSchema = z.discriminatedUnion('kind', [
     dc: z.coerce.number().optional(),
   }),
   z.object({
-    kind: z.literal('forced_move'),
-    moveType: z.enum(['push', 'pull', 'break_guard']),
-    distance: z.coerce.number(),
+    kind: z.literal('modify_counter'),
+    flat: z.coerce.number(),
   }),
 ]);
 
@@ -275,6 +274,7 @@ export const RuntimeUnitSchema = z.object({
   状态列表: z.array(RuntimeStatusSchema).prefault([]),
   修正器列表: z.array(RuntimeModifierSchema).prefault([]),
   标记: RuntimeUnitFlagsSchema,
+  行动计数器: z.coerce.number().prefault(1000),
 });
 
 export const BattleSideRuntimeSchema = z.object({

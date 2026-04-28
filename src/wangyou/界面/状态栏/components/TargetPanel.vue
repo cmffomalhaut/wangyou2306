@@ -1,10 +1,7 @@
 <template>
-  <section class="subpanel target-panel">
-    <div class="subpanel-head">
-      <div>
-        <div class="panel-title">目标面板</div>
-        <div class="panel-phase">{{ panelHint }}</div>
-      </div>
+  <section class="target-section">
+    <div class="target-section-head">
+      <div class="section-label">目标选择</div>
       <div v-if="targetBadgeText" class="target-type-badge">{{ targetBadgeText }}</div>
     </div>
 
@@ -22,6 +19,11 @@
       <div class="target-hint-desc">本次行动会在全部存活敌人中随机抽取一个目标，无需手动指定。</div>
     </div>
 
+    <div v-else-if="targetType === 'self'" class="target-hint-card">
+      <div class="target-hint-title">自身目标</div>
+      <div class="target-hint-desc">本次行动以自身为目标，无需额外指定。</div>
+    </div>
+
     <div v-else-if="!targetCandidates.length" class="empty-text">当前没有合法目标。</div>
 
     <div v-else class="target-grid">
@@ -31,21 +33,25 @@
         class="target-btn"
         :class="{
           selected: selectedTargetId === target.unitId,
-          enemy: target.阵营 === 'enemy',
-          ally: target.阵营 === 'ally',
+          'enemy-target': target.阵营 === 'enemy',
+          'ally-target': target.阵营 === 'ally',
         }"
         :disabled="!canAct"
         @click="$emit('select-target', target.unitId)"
       >
-        <span class="target-name">{{ target.名字 }}</span>
-        <span class="target-meta"
-          >{{ target.阵营 === 'enemy' ? '敌方单位' : '我方单位' }} · HP {{ target.当前资源.HP }}/{{
-            target.当前资源.HPMax
-          }}</span
-        >
-        <span class="target-meta"
-          >MP {{ target.当前资源.MP }}/{{ target.当前资源.MPMax }} · 护盾 {{ target.当前资源.Shield }}</span
-        >
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div :class="['unit-portrait', target.阵营 === 'enemy' ? 'enemy-portrait' : 'ally-portrait']" style="width: 28px; height: 28px; font-size: 11px;">
+            {{ target.名字.charAt(0) }}
+          </div>
+          <div>
+            <div class="target-btn-name">{{ target.名字 }}</div>
+            <div class="target-btn-meta">{{ target.阵营 === 'enemy' ? '敌方' : '我方' }} · HP {{ target.当前资源.HP }}/{{ target.当前资源.HPMax }}</div>
+          </div>
+        </div>
+        <div style="margin-top: 4px; display: flex; gap: 8px; font-size: 10px; color: var(--text-muted);">
+          <span>MP {{ target.当前资源.MP }}/{{ target.当前资源.MPMax }}</span>
+          <span v-if="target.当前资源.Shield > 0">护盾 {{ target.当前资源.Shield }}</span>
+        </div>
       </button>
     </div>
   </section>
@@ -89,18 +95,9 @@ const targetCandidates = computed(() => {
   const actorSideUnits = props.actor.阵营 === 'ally' ? allies : enemies;
   const oppositeSideUnits = props.actor.阵营 === 'ally' ? enemies : allies;
 
-  if (targetType.value === 'self') {
-    return props.actor.是否存活 ? [props.actor] : [];
-  }
-
-  if (targetType.value === 'single_ally') {
-    return actorSideUnits;
-  }
-
-  if (targetType.value === 'single_enemy') {
-    return oppositeSideUnits;
-  }
-
+  if (targetType.value === 'self') return props.actor.是否存活 ? [props.actor] : [];
+  if (targetType.value === 'single_ally') return actorSideUnits;
+  if (targetType.value === 'single_enemy') return oppositeSideUnits;
   return [];
 });
 
@@ -125,13 +122,5 @@ const groupTargetText = computed(() => {
 
   const aliveNames = targets.filter(unit => unit.是否存活).map(unit => unit.名字);
   return aliveNames.length ? `本次行动会影响：${aliveNames.join('、')}` : '当前没有可被影响的目标。';
-});
-
-const panelHint = computed(() => {
-  if (!props.targetType) return '根据技能目标类型展示本次可选目标';
-  if (isGroupTarget.value) return '群体技能无需逐个指定目标';
-  if (props.targetType === 'random_enemy') return '随机敌方目标由系统结算时决定';
-  if (!props.canAct) return '当前不可操作';
-  return '点击一个合法目标后提交行动';
 });
 </script>
