@@ -3,7 +3,7 @@
 //
 //  流程：
 //    MVU（简单格式）──→ simpleToFull() ──→ 引擎（完整格式）
-//    战斗期间 MVU 存完整格式（.passthrough() 透传额外字段）
+//    战斗期间 MVU 只存战斗状态，引擎数据（角色档案等）由 battle_data.ts 硬编码重建
 //    结算后 fullToSimple() ──→ MVU（简单格式）
 //
 //  按钮：开始战斗 / 推进战斗 / 战斗结算 / 清理战斗状态 / 强制重建战斗
@@ -12,13 +12,13 @@
 import {
   simpleToFull,
   fullToSimple,
-  isEncounterPending,
   resolveEncounter,
 } from './battle_adapter';
 import { ENCOUNTER_GROUPS, MONSTER_DB, SKILL_DB } from './battle_data';
 import { advanceBattle, applyBattleSummaryToRecords } from '../wangyou/脚本/战斗系统/engine';
 import type { StatData as FullStatData, PendingCommand, BattleState, CharacterRecord } from '../wangyou/脚本/战斗系统/types';
 import type { MonsterTemplate } from '../wangyou/脚本/战斗系统/monsters';
+import type { SimpleStatData } from './battle_adapter';
 
 const AUTO_ADVANCE_LIMIT = 24;
 const MESSAGE_ID = -1;
@@ -27,9 +27,9 @@ const MESSAGE_ID = -1;
 //  MVU 读写
 // ────────────────────────────────────────────
 
-function readFullData(): FullStatData {
+function readSimpleData(): SimpleStatData {
   const variables = Mvu.getMvuData({ type: 'message', message_id: MESSAGE_ID });
-  return (_.get(variables, 'stat_data', {}) ?? {}) as FullStatData;
+  return (_.get(variables, 'stat_data', {}) ?? {}) as SimpleStatData;
 }
 
 async function writeData(data: Record<string, unknown>): Promise<void> {
@@ -39,7 +39,7 @@ async function writeData(data: Record<string, unknown>): Promise<void> {
 }
 
 // ────────────────────────────────────────────
-//  怪物加载（直接操作 FullStatData）
+//  引擎数据重建（硬编码 DB → 内存，不入 MVU）
 // ────────────────────────────────────────────
 
 function createMonsterRecord(template: MonsterTemplate, uniqueId: string): CharacterRecord {
@@ -88,6 +88,34 @@ function createMonsterRecord(template: MonsterTemplate, uniqueId: string): Chara
   };
 }
 
+/** 从持久化的遭遇怪物列表重建怪物角色档案 */
+function reloadMonsters(full: FullStatData): void {
+  const monsterIds = full.遭遇怪物列表;
+  if (!monsterIds?.length) return;
+
+  const addedSkills = new Set(Object.keys(full.技能定义表));
+
+  for (const uniqueId of monsterIds) {
+    if (full.角色档案[uniqueId]) continue;
+
+    const match = uniqueId.match(/^(.+)_\d+$/);
+    if (!match) continue;
+
+    const template = MONSTER_DB[match[1]];
+    if (!template) continue;
+
+    full.角色档案[uniqueId] = createMonsterRecord(template, uniqueId);
+
+    for (const skill of template.skills) {
+      if (!addedSkills.has(skill.skillId) && SKILL_DB[skill.skillId]) {
+        full.技能定义表[skill.skillId] = SKILL_DB[skill.skillId];
+        addedSkills.add(skill.skillId);
+      }
+    }
+  }
+}
+
+/** 从遭遇 ID 首次加载怪物（遭遇触发时调用） */
 function loadEncounterMonsters(full: FullStatData): { full: FullStatData; monsterIds: string[] } {
   const encounterId = full.世界.当前遭遇;
   if (!encounterId) return { full, monsterIds: [] };
@@ -103,7 +131,6 @@ function loadEncounterMonsters(full: FullStatData): { full: FullStatData; monste
     const template = MONSTER_DB[entry.monsterId];
     if (!template) continue;
 
-    // 补全怪物技能定义
     for (const skill of template.skills) {
       if (!addedSkills.has(skill.skillId) && SKILL_DB[skill.skillId]) {
         next.技能定义表[skill.skillId] = SKILL_DB[skill.skillId];
@@ -124,6 +151,21 @@ function loadEncounterMonsters(full: FullStatData): { full: FullStatData; monste
   return { full: next, monsterIds };
 }
 
+function rebuildEngineData(): FullStatData {
+  const simple = readSimpleData();
+  const full = simpleToFull(simple);
+
+  // 合并持久化的战斗状态
+  if (simple.战斗状态) {
+    full.战斗状态 = simple.战斗状态 as FullStatData['战斗状态'];
+  }
+
+  // 从 MVU 持久化的怪物 ID 列表重建怪物角色档案
+  reloadMonsters(full);
+
+  return full;
+}
+
 // ────────────────────────────────────────────
 //  主循环
 // ────────────────────────────────────────────
@@ -142,20 +184,19 @@ async function runBattleLoop(full: FullStatData, command?: PendingCommand): Prom
     current.战斗状态 = result.state;
 
     if (result.state.状态 === 'ended') {
-      // 结算结果由 handleSettleBattle 统一处理
       current.战斗状态 = result.state;
-      await writeData(current as unknown as Record<string, unknown>);
+      await writeData(fullToSimple(current) as unknown as Record<string, unknown>);
       return current;
     }
 
     if (result.state.玩家输入态.可操作 && result.state.当前阶段 === 'select_action') {
-      await writeData(current as unknown as Record<string, unknown>);
+      await writeData(fullToSimple(current) as unknown as Record<string, unknown>);
       return current;
     }
 
     nextCommand = (result.state as BattleState & { 待处理指令?: PendingCommand }).待处理指令 ?? undefined;
     if (!nextCommand && shouldPauseForPlayer(undefined, result.state)) {
-      await writeData(current as unknown as Record<string, unknown>);
+      await writeData(fullToSimple(current) as unknown as Record<string, unknown>);
       return current;
     }
   }
@@ -168,44 +209,34 @@ async function runBattleLoop(full: FullStatData, command?: PendingCommand): Prom
 // ────────────────────────────────────────────
 
 async function handleStartBattle(): Promise<void> {
-  const raw = readFullData();
+  const simple = readSimpleData();
 
-  // 检查是否需要初始化（从简单格式转完整格式）
-  const needsInit = !raw.规则配置 || !raw.技能定义表;
+  // 如果战斗已在运行，从持久化状态继续
+  if (simple.战斗状态) {
+    const full = rebuildEngineData();
+    await runBattleLoop(full);
+    return;
+  }
 
-  let full: FullStatData;
-  if (needsInit) {
-    // 首次：简单 → 完整，合并硬编码数据
-    full = simpleToFull(raw as unknown as import('./battle_adapter').SimpleStatData);
-
-    // 加载遭遇怪物
-    if (full.世界.当前遭遇) {
-      const result = loadEncounterMonsters(full);
-      full = result.full;
-    }
-  } else {
-    // 已有完整数据（从上次 tick 继续）
-    full = raw;
-
-    // 如果有待处理的遭遇，加载怪物
-    if (full.世界.当前遭遇) {
-      const result = loadEncounterMonsters(full);
-      full = result.full;
-    }
+  // 首次启动：简单 → 完整，加载遭遇怪物
+  let full = simpleToFull(simple);
+  if (full.世界.当前遭遇) {
+    const result = loadEncounterMonsters(full);
+    full = result.full;
   }
 
   await runBattleLoop(full);
 }
 
 async function handleAdvanceBattle(): Promise<void> {
-  const full = readFullData();
+  const full = rebuildEngineData();
   const state = full.战斗状态 as BattleState | null;
   const command = (state as BattleState & { 待处理指令?: PendingCommand })?.待处理指令 ?? undefined;
   await runBattleLoop(full, command ?? undefined);
 }
 
 async function handleSettleBattle(): Promise<void> {
-  const full = readFullData();
+  const full = rebuildEngineData();
 
   // 引擎结算
   let next = applyBattleSummaryToRecords(full);
@@ -219,26 +250,17 @@ async function handleSettleBattle(): Promise<void> {
 }
 
 async function handleClearBattle(): Promise<void> {
-  const raw = readFullData();
-  // 如果当前是完整格式（有角色档案），先转回简单再清战斗状态
-  if (raw.角色档案) {
-    const simple = fullToSimple(raw);
-    simple.战斗状态 = null;
-    await writeData(simple as unknown as Record<string, unknown>);
-  } else {
-    const simple = raw as unknown as import('./battle_adapter').SimpleStatData;
-    simple.战斗状态 = null;
-    await writeData(simple as unknown as Record<string, unknown>);
-  }
+  const simple = readSimpleData();
+  simple.战斗状态 = null;
+  await writeData(simple as unknown as Record<string, unknown>);
 }
 
 async function handleRebuildBattle(): Promise<void> {
   await handleClearBattle();
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // 重建：简单 → 完整 → 加载怪物 → 开始战斗
-  const raw = readFullData();
-  let full = simpleToFull(raw as unknown as import('./battle_adapter').SimpleStatData);
+  const simple = readSimpleData();
+  let full = simpleToFull(simple);
 
   if (full.世界.当前遭遇) {
     const result = loadEncounterMonsters(full);

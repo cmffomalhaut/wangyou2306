@@ -145,7 +145,6 @@ const Schema = z
 
     遭遇怪物列表: z.array(z.string()).prefault([]),
   })
-  .passthrough()
   .prefault({});
 
 // ═══════════════════════════════════════════
