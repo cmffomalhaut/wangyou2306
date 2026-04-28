@@ -286,7 +286,7 @@ $(() => {
   errorCatched(async () => {
     await waitGlobalInitialized('Mvu');
 
-    replaceScriptButtons(BATTLE_BUTTONS);
+    appendInexistentScriptButtons(BATTLE_BUTTONS);
 
     eventOn(getButtonEvent('开始战斗'), async () => {
       await handleStartBattle();

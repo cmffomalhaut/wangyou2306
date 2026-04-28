@@ -59,7 +59,7 @@ async function openPanel(): Promise<void> {
 }
 
 $(() => {
-  replaceScriptButtons([{ name: '打开战斗面板', visible: true }]);
+  appendInexistentScriptButtons([{ name: '打开战斗面板', visible: true }]);
 
   eventOn(getButtonEvent('打开战斗面板'), async () => {
     await openPanel();
