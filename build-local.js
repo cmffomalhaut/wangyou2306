@@ -12,6 +12,9 @@ const shared = {
       '@': resolve(__dirname, 'src'),
       '@util/mvu': resolve(__dirname, 'src/util/mvu.ts'),
       'async-wait-until': resolve(__dirname, 'src/util/wait-until.ts'),
+      // Redirect lodash imports to a shim that re-exports window._
+      // The tavern helper iframe doesn't provide an import map for bare module specifiers.
+      'lodash': resolve(__dirname, 'src/util/lodash-shim.ts'),
     },
   },
 };
@@ -39,7 +42,6 @@ for (const { input, name, outDir } of entries) {
         },
         external: (id) => {
           if (/^https?:\/\//.test(id)) return true;
-          if (id === 'lodash') return true;
           return false;
         },
       },
