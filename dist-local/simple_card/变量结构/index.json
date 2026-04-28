@@ -3,7 +3,7 @@
   "enabled": true,
   "name": "简单卡-变量结构",
   "id": "simple-card-mvu-schema",
-  "content": "import 'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@13be318/dist-local/simple_card/%E5%8F%98%E9%87%8F%E7%BB%93%E6%9E%84/index.js';",
+  "content": "import 'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@6eb6733/dist-local/simple_card/%E5%8F%98%E9%87%8F%E7%BB%93%E6%9E%84/index.js';",
   "info": "自动注册简单卡的 MVU 数据结构 schema（七维属性、背包、队友等）。",
   "data": {}
 }
