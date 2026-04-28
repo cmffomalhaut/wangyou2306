@@ -252,9 +252,19 @@ async function handleRebuildBattle(): Promise<void> {
 //  注册
 // ────────────────────────────────────────────
 
+const BATTLE_BUTTONS = [
+  { name: '开始战斗', visible: true },
+  { name: '推进战斗', visible: true },
+  { name: '战斗结算', visible: true },
+  { name: '清理战斗状态', visible: true },
+  { name: '强制重建战斗', visible: true },
+];
+
 $(() => {
   errorCatched(async () => {
     await waitGlobalInitialized('Mvu');
+
+    replaceScriptButtons(BATTLE_BUTTONS);
 
     eventOn(getButtonEvent('开始战斗'), async () => {
       await handleStartBattle();
@@ -276,4 +286,8 @@ $(() => {
       await handleRebuildBattle();
     });
   })();
+});
+
+$(window).on('pagehide', () => {
+  replaceScriptButtons([]);
 });
