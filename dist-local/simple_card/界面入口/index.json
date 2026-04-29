@@ -3,7 +3,7 @@
   "enabled": true,
   "name": "简单卡-战斗面板",
   "id": "simple-card-battle-panel",
-  "content": "import 'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@2849b28/dist-local/simple_card/%E7%95%8C%E9%9D%A2%E5%85%A5%E5%8F%A3/index.js';",
+  "content": "import 'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@17e3b02/dist-local/simple_card/jm_index.js';",
   "info": "浮动战斗面板入口。点击按钮后加载 Vue 战斗 UI，可进行技能选择、目标选择、道具使用。",
   "button": {
     "enabled": true,
