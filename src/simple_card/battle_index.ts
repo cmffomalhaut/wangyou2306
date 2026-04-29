@@ -285,8 +285,10 @@ const BATTLE_BUTTONS = [
 ];
 
 $(() => {
+  appendInexistentScriptButtons(BATTLE_BUTTONS);
+
   errorCatched(async () => {
-    appendInexistentScriptButtons(BATTLE_BUTTONS);
+    await waitGlobalInitialized('Mvu');
 
     eventOn(getButtonEvent('开始战斗'), async () => {
       await handleStartBattle();
