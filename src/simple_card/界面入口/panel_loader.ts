@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 const UI_HTML_URL =
-  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@f5e731a/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.html';
+  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@260a407/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.html';
 
 let $iframe: JQuery<HTMLIFrameElement> | null = null;
 
