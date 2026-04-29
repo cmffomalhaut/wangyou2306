@@ -26,7 +26,6 @@ const entries = [
   { input: 'src/wangyou/脚本/战斗系统/index.ts', name: '脚本/战斗系统/index', outDir: 'dist-local/wangyou' },
   { input: 'src/simple_card/mvu_schema.ts', name: '变量结构/index', outDir: 'dist-local/simple_card' },
   { input: 'src/simple_card/battle_index.ts', name: '战斗系统/index', outDir: 'dist-local/simple_card' },
-  { input: 'src/simple_card/界面入口/panel_loader.ts', name: '界面入口/index', outDir: 'dist-local/simple_card' },
 ];
 
 for (const { input, name, outDir } of entries) {

@@ -201,7 +201,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
-import './global.css';
 import { useDataStore } from './store';
 import BattleArena from './components/BattleArena.vue';
 import BattleResultModal from './components/BattleResultModal.vue';
