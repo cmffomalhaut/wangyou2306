@@ -49,14 +49,7 @@ export default defineConfig({
       formats: ['iife'],
     },
     rollupOptions: {
-      output: {
-        globals: { vue: 'Vue', lodash: '_' },
-      },
-      external: (id) => {
-        if (/^https?:\/\//.test(id)) return true;
-        if (id === 'vue' || id === 'lodash') return true;
-        return false;
-      },
+      external: (id) => /^https?:\/\//.test(id),
     },
   },
 });

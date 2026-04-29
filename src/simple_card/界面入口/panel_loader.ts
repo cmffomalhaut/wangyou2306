@@ -5,9 +5,6 @@
 //  CDN 部署后，此脚本作为独立入口被角色卡引用。
 // ═══════════════════════════════════════════════════════════════
 
-const UI_JS_URL =
-  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@8e3c678/dist-local/simple_card/jm_index.js';
-
 let $container: JQuery<HTMLDivElement> | null = null;
 
 function openPanel(): void {
@@ -18,10 +15,7 @@ function openPanel(): void {
 
   $container = $(document.createElement('div')) as JQuery<HTMLDivElement>;
   $container.attr('id', 'battle-panel-root').appendTo('body');
-
-  const script = document.createElement('script');
-  script.src = UI_JS_URL;
-  document.head.appendChild(script);
+  (window as any).mountBattlePanel?.();
 }
 
 $(() => {
