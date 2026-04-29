@@ -27,13 +27,12 @@ export default defineConfig({
         format: 'iife',
         globals: {
           'vue': 'Vue',
-          'pinia': 'Pinia',
           'lodash': '_',
         },
       },
       external: (id) => {
         if (/^https?:\/\//.test(id)) return true;
-        if (id === 'vue' || id === 'pinia' || id === 'lodash') return true;
+        if (id === 'vue' || id === 'lodash') return true;
         return false;
       },
     },
