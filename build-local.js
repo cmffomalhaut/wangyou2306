@@ -2,6 +2,7 @@ import { build } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import yaml from '@rollup/plugin-yaml';
 import { resolve } from 'path';
+import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 
 const __dirname = import.meta.dirname;
 
@@ -48,4 +49,23 @@ for (const { input, name, outDir } of entries) {
     },
   });
   console.log(`Built: ${name}.js`);
+}
+
+// Build simple_card UI as IIFE JS
+const uiOutDir = resolve(__dirname, 'dist-local/simple_card/界面');
+const { execSync } = await import('child_process');
+execSync('pnpm vite build --config vite.config.simple-ui.ts', { stdio: 'inherit' });
+
+// Inline CSS into JS
+const { readdirSync } = await import('fs');
+const cssFiles = readdirSync(uiOutDir).filter(f => f.endsWith('.css'));
+if (cssFiles.length) {
+  const cssPath = resolve(uiOutDir, cssFiles[0]);
+  const css = readFileSync(cssPath, 'utf-8');
+  const jsPath = resolve(uiOutDir, 'index.js');
+  const js = readFileSync(jsPath, 'utf-8');
+  const inject = `(function(){var s=document.createElement('style');s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();\n`;
+  writeFileSync(jsPath, inject + js);
+  unlinkSync(cssPath);
+  console.log('Built: simple_card/界面/index.js (CSS inlined)');
 }

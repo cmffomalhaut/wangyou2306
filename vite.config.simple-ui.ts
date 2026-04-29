@@ -1,15 +1,34 @@
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import yaml from '@rollup/plugin-yaml';
 import { resolve } from 'path';
-import { viteSingleFile } from 'vite-plugin-singlefile';
+
+function inlineCss(): Plugin {
+  return {
+    name: 'inline-css',
+    apply: 'build',
+    writeBundle(opts, bundle) {
+      const fs = require('fs');
+      const path = require('path');
+      const outDir = opts.dir!;
+      let css = '';
+      for (const [key, chunk] of Object.entries(bundle)) {
+        if (key.endsWith('.css') && chunk.type === 'asset') {
+          css = chunk.source as string;
+          fs.unlinkSync(path.join(outDir, key));
+        }
+      }
+      if (!css) return;
+      const jsFile = path.join(outDir, 'index.js');
+      const js = fs.readFileSync(jsFile, 'utf-8');
+      const inject = `(function(){var s=document.createElement('style');s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();\n`;
+      fs.writeFileSync(jsFile, inject + js);
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    yaml(),
-    viteSingleFile(),
-  ],
+  plugins: [vue(), yaml(), inlineCss()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -17,18 +36,18 @@ export default defineConfig({
       'async-wait-until': resolve(__dirname, 'src/util/wait-until.ts'),
     },
   },
-  root: resolve(__dirname, 'src/simple_card/界面'),
-  base: './',
   build: {
     outDir: resolve(__dirname, 'dist-local/simple_card/界面'),
     emptyOutDir: true,
+    lib: {
+      entry: resolve(__dirname, 'src/simple_card/界面/index.ts'),
+      name: 'BattlePanel',
+      fileName: () => 'index.js',
+      formats: ['iife'],
+    },
     rollupOptions: {
       output: {
-        format: 'iife',
-        globals: {
-          'vue': 'Vue',
-          'lodash': '_',
-        },
+        globals: { vue: 'Vue', lodash: '_' },
       },
       external: (id) => {
         if (/^https?:\/\//.test(id)) return true;

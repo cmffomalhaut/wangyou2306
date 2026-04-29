@@ -5,38 +5,23 @@
 //  CDN 部署后，此脚本作为独立入口被角色卡引用。
 // ═══════════════════════════════════════════════════════════════
 
-const UI_HTML_URL =
-  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@260a407/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.html';
+const UI_JS_URL =
+  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@9c706c0/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.js';
 
-let $iframe: JQuery<HTMLIFrameElement> | null = null;
+let $container: JQuery<HTMLDivElement> | null = null;
 
 function openPanel(): void {
-  if ($iframe) {
-    $iframe.css('display', '');
+  if ($container) {
+    $container.css('display', '');
     return;
   }
 
-  $iframe = $(document.createElement('iframe')) as JQuery<HTMLIFrameElement>;
-  $iframe
-    .attr('src', UI_HTML_URL)
-    .css({
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      width: '100vw',
-      height: '100vh',
-      border: 'none',
-      zIndex: '99999',
-      background: 'transparent',
-    })
-    .appendTo('body');
+  $container = $(document.createElement('div')) as JQuery<HTMLDivElement>;
+  $container.attr('id', 'battle-panel-root').appendTo('body');
 
-  window.addEventListener('message', (e: MessageEvent) => {
-    if (e.source !== $iframe?.[0]?.contentWindow) return;
-    if (e.data?.type === 'panel-close') {
-      $iframe?.css('display', 'none');
-    }
-  });
+  const script = document.createElement('script');
+  script.src = UI_JS_URL;
+  document.head.appendChild(script);
 }
 
 $(() => {
