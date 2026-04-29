@@ -1,11 +1,5 @@
 <template>
-  <div class="battle-panel-overlay">
-    <div class="battle-panel-container">
-      <div class="battle-panel-header">
-        <span class="battle-panel-title">战斗面板</span>
-        <button class="battle-panel-close" @click="closePanel" title="关闭面板">✕</button>
-      </div>
-      <div class="battle-shell">
+  <div class="battle-shell">
     <div v-if="battleState" class="battle-top-bar">
       <TurnOrderBar :battle-state="battleState" />
     </div>
@@ -202,13 +196,12 @@
         </div>
       </main>
     </div>
-    </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onUnmounted } from 'vue';
+import './global.css';
 import { useDataStore } from './store';
 import BattleArena from './components/BattleArena.vue';
 import BattleResultModal from './components/BattleResultModal.vue';
@@ -419,8 +412,4 @@ async function submitDefend() { const actor = activeAllyUnit.value; if (actor) f
 async function submitEscape() { const actor = activeAllyUnit.value; if (actor) fireAnim(escapeAnimation(actor.unitId, actor.阵营)); const c = buildPendingCommand('escape'); if (!c) return; await writePendingCommand(c); cancelSelection(); await triggerButton('推进战斗'); }
 async function advanceEnemy() { await triggerButton('推进战斗'); }
 async function settleBattle() { await triggerButton('战斗结算'); }
-function closePanel() {
-  const overlay = document.querySelector('.battle-panel-overlay') as HTMLElement;
-  if (overlay) overlay.style.display = 'none';
-}
 </script>
