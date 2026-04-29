@@ -1,38 +1,49 @@
-// ═══════════════════════════════════════════════════════════════
-//  战斗面板入口 —— 独立酒馆助手脚本
-//
-//  注册按钮"打开战斗面板"，点击后加载 Vue 浮动面板。
-//  CDN 部署后，此脚本作为独立入口被角色卡引用。
-// ═══════════════════════════════════════════════════════════════
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from '../界面/App.vue';
 
-const UI_JS_URL =
-  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@1016024/dist-local/simple_card/jm_index.js';
+const IFRAME_SRCDOC = `<!DOCTYPE html><html><head><style>*,*::before,*::after{box-sizing:border-box;}html,body{margin:0!important;padding:0;overflow:hidden!important;max-width:100%!important;}</style></head><body></body></html>`;
 
-let $container: JQuery<HTMLDivElement> | null = null;
+let $iframe: JQuery<HTMLIFrameElement> | null = null;
+let vueApp: ReturnType<typeof createApp> | null = null;
+let $teleportedStyle: JQuery | null = null;
 
 function openPanel(): void {
-  if ($container) {
-    $container.css('display', '');
+  if ($iframe) {
+    $iframe.css('display', '');
     return;
   }
 
-  $container = $(document.createElement('div')) as JQuery<HTMLDivElement>;
-  $container.attr('id', 'battle-panel-root').appendTo('body');
+  $iframe = ($('<iframe>').attr({ frameborder: 0, srcdoc: IFRAME_SRCDOC }) as JQuery<HTMLIFrameElement>)
+    .css({ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', border: 'none', zIndex: 99999 })
+    .appendTo('body')
+    .on('load', () => {
+      const doc = $iframe![0].contentDocument!;
+      $teleportedStyle = $('<div>').append($('head > style', document).clone()).appendTo(doc.head);
+      vueApp = createApp(App).use(createPinia());
+      vueApp.mount(doc.body);
+    });
+}
 
-  const script = document.createElement('script');
-  script.src = UI_JS_URL;
-  script.onload = () => (window as any).mountBattlePanel?.();
-  document.head.appendChild(script);
+function closePanel(): void {
+  if ($iframe) $iframe.css('display', 'none');
 }
 
 $(() => {
   appendInexistentScriptButtons([{ name: '打开战斗面板', visible: true }]);
+  eventOn(getButtonEvent('打开战斗面板'), () => openPanel());
 
-  eventOn(getButtonEvent('打开战斗面板'), () => {
-    openPanel();
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (e.source !== $iframe?.[0]?.contentWindow) return;
+    if (e.data?.type === 'battle-close') closePanel();
   });
 });
 
 $(window).on('pagehide', () => {
-  replaceScriptButtons([]);
+  vueApp?.unmount();
+  $teleportedStyle?.remove();
+  $iframe?.remove();
+  $iframe = null;
+  vueApp = null;
+  $teleportedStyle = null;
 });

@@ -43,7 +43,7 @@ export default defineConfig({
     outDir: resolve(__dirname, 'dist-local/simple_card'),
     emptyOutDir: false,
     lib: {
-      entry: resolve(__dirname, 'src/simple_card/界面/index.ts'),
+      entry: resolve(__dirname, 'src/simple_card/界面入口/panel_loader.ts'),
       name: 'BattlePanel',
       fileName: () => 'jm_index.js',
       formats: ['iife'],
