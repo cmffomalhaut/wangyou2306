@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 const UI_JS_URL =
-  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@768193d/dist-local/simple_card/%E7%95%8C%E9%9D%A2/index.js';
+  'https://testingcf.jsdelivr.net/gh/cmffomalhaut/wangyou2306@HASH/dist-local/simple_card/jm_index.js';
 
 let $container: JQuery<HTMLDivElement> | null = null;
 

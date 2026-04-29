@@ -19,7 +19,7 @@ function inlineCss(): Plugin {
         }
       }
       if (!css) return;
-      const jsFile = path.join(outDir, 'index.js');
+      const jsFile = path.join(outDir, 'jm_index.js');
       const js = fs.readFileSync(jsFile, 'utf-8');
       const inject = `(function(){var s=document.createElement('style');s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();\n`;
       fs.writeFileSync(jsFile, inject + js);
@@ -37,12 +37,12 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: resolve(__dirname, 'dist-local/simple_card/界面'),
-    emptyOutDir: true,
+    outDir: resolve(__dirname, 'dist-local/simple_card'),
+    emptyOutDir: false,
     lib: {
       entry: resolve(__dirname, 'src/simple_card/界面/index.ts'),
       name: 'BattlePanel',
-      fileName: () => 'index.js',
+      fileName: () => 'jm_index.js',
       formats: ['iife'],
     },
     rollupOptions: {

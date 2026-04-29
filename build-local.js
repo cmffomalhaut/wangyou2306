@@ -52,7 +52,7 @@ for (const { input, name, outDir } of entries) {
 }
 
 // Build simple_card UI as IIFE JS
-const uiOutDir = resolve(__dirname, 'dist-local/simple_card/界面');
+const uiOutDir = resolve(__dirname, 'dist-local/simple_card');
 const { execSync } = await import('child_process');
 execSync('pnpm vite build --config vite.config.simple-ui.ts', { stdio: 'inherit' });
 
@@ -62,10 +62,10 @@ const cssFiles = readdirSync(uiOutDir).filter(f => f.endsWith('.css'));
 if (cssFiles.length) {
   const cssPath = resolve(uiOutDir, cssFiles[0]);
   const css = readFileSync(cssPath, 'utf-8');
-  const jsPath = resolve(uiOutDir, 'index.js');
+  const jsPath = resolve(uiOutDir, 'jm_index.js');
   const js = readFileSync(jsPath, 'utf-8');
   const inject = `(function(){var s=document.createElement('style');s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();\n`;
   writeFileSync(jsPath, inject + js);
   unlinkSync(cssPath);
-  console.log('Built: simple_card/界面/index.js (CSS inlined)');
+  console.log('Built: simple_card/jm_index.js (CSS inlined)');
 }
