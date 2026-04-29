@@ -408,7 +408,10 @@ async function writePendingCommand(command: Record<string, unknown>) {
   store.data.战斗状态!.玩家输入态.待选技能Id = (command.skillId as string | undefined) ?? undefined;
   store.data.战斗状态!.玩家输入态.待选目标Id = (command.targetIds as string[] | undefined)?.[0];
 }
-async function triggerButton(name: string) { emitEvent(getButtonEvent(name)); }
+async function triggerButton(name: string) {
+  const w = (window.parent !== window ? window.parent : window) as any;
+  w.emitEvent(w.getButtonEvent(name));
+}
 async function startBattle() { await triggerButton('开始战斗'); }
 async function submitSkill() { fireAnim(skillAnim()); const c = buildPendingCommand('skill'); if (!c) return; await writePendingCommand(c); cancelSelection(); await triggerButton('推进战斗'); }
 async function submitItem() { const item = selectedItem.value; const actor = activeAllyUnit.value; if (actor && item) { const targetIds = selectedTargetId.value ? [selectedTargetId.value] : []; let tags: string[] = []; let effectKinds: string[] = []; if (item.效果列表) { effectKinds = item.效果列表.map((e: any) => e.kind); if (effectKinds.includes('heal') || effectKinds.includes('restore_mp')) tags = ['heal']; else if (effectKinds.includes('shield') || effectKinds.includes('add_modifier')) tags = ['buff']; else if (effectKinds.includes('damage')) tags = ['physical']; else tags = ['support']; } fireAnim(classifyAnimation(tags, (item.目标类型 as any) ?? 'self', effectKinds, actor.unitId, actor.阵营, targetIds)); } const c = buildPendingCommand('item'); if (!c) return; await writePendingCommand(c); cancelSelection(); await triggerButton('推进战斗'); }
