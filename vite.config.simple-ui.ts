@@ -29,6 +29,9 @@ function inlineCss(): Plugin {
 
 export default defineConfig({
   plugins: [vue(), yaml(), inlineCss()],
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
