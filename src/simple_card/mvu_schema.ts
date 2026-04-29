@@ -75,8 +75,7 @@ const 角色基础 = z
       .prefault({}),
     技能列表: z.array(技能条目).prefault([]),
     被动列表: z.array(被动条目).prefault([]),
-  })
-  .prefault({});
+  });
 
 // ═══════════════════════════════════════════
 //  背包
@@ -125,7 +124,7 @@ export const Schema = z
   .object({
     世界: 世界,
 
-    主角: 角色基础,
+    主角: 角色基础.prefault({}),
 
     队友: z
       .record(z.string(), 角色基础.extend({ 好感度: z.coerce.number().transform(v => clamp(v, 0, 100)).prefault(0) }))
