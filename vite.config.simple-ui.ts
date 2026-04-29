@@ -21,7 +21,7 @@ function inlineCss(): Plugin {
       if (!css) return;
       const jsFile = path.join(outDir, 'jm_index.js');
       const js = fs.readFileSync(jsFile, 'utf-8');
-      const inject = `(function(){var s=document.createElement('style');s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();\n`;
+      const inject = `(function(){var s=document.createElement('style');s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();`;
       fs.writeFileSync(jsFile, inject + js);
     },
   };
